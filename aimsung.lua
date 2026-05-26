@@ -1,7 +1,6 @@
 --[[
-    HaiDwnG Hub - Aim Lock 100% (liên tục bám) + FOV 450 Touch
-    Chức năng: ESP, Silent Aim, Snap khi bắn, Auto Shoot, No Recoil, No Spread, Fast Reload, Speed, Fly
-    Logo bên trái, menu thu nhỏ, FOV slider dùng tay.
+    HaiDwnG Hub - Chỉ bắn khi có góc bắn (không xuyên tường)
+    Aim Lock chỉ bám vào mục tiêu visible, auto shoot chỉ bắn khi thấy.
 ]]
 
 local Players = game:GetService("Players")
@@ -102,8 +101,8 @@ strokeMain.Color = THEME_COLOR
 local TitleBtn = Instance.new("TextButton", MainFrame)
 TitleBtn.BackgroundTransparency = 1
 TitleBtn.Size = UDim2.new(1, 0, 0, 35)
-TitleBtn.Text = "🌸 HaiDwnG Hub (Lock 100%)"
-TitleBtn.TextSize = 12
+TitleBtn.Text = "🌸 HaiDwnG Hub (No Wallbang)"
+TitleBtn.TextSize = 11
 TitleBtn.Font = Enum.Font.GothamBlack
 local hue = 0
 RunService.RenderStepped:Connect(function(dt)
@@ -150,7 +149,7 @@ VersionFrame.Position = UDim2.new(0, 10, 0, 40)
 VersionFrame.Size = UDim2.new(1, -20, 0, 18)
 Instance.new("UICorner", VersionFrame).CornerRadius = UDim.new(0, 20)
 local VersionText = Instance.new("TextLabel", VersionFrame)
-VersionText.Text = "✨ Lock 100% | FOV 450 ✨"
+VersionText.Text = "✨ Chỉ bắn khi thấy ✨"
 VersionText.BackgroundTransparency = 1
 VersionText.Size = UDim2.new(1,0,1,0)
 VersionText.TextColor3 = Color3.fromRGB(255, 120, 150)
@@ -165,7 +164,7 @@ ContentFrame.ScrollBarThickness = 2
 ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 580)
 Instance.new("UICorner", ContentFrame).CornerRadius = UDim.new(0, 10)
 
--- Hàm tạo toggle
+-- Toggle helper
 local function MakeToggle(label, yPos, callback)
     local bg = Instance.new("TextButton", ContentFrame)
     bg.Size = UDim2.new(0, 30, 0, 15)
@@ -204,8 +203,8 @@ MakeToggle("Máu", y, function(v) SETTINGS.ESP_Health = v end); y=y+20
 MakeToggle("Line dọc", y, function(v) SETTINGS.ESP_Line = v end); y=y+20
 MakeToggle("Silent Aim", y, function(v) SETTINGS.SilentAim = v end); y=y+20
 MakeToggle("Snap khi bắn", y, function(v) SETTINGS.SnapOnFire = v end); y=y+20
-MakeToggle("🔒 Aim Lock 100% (bám cứng)", y, function(v) SETTINGS.AimLock = v end); y=y+20
-MakeToggle("Auto Shoot (30/s)", y, function(v) SETTINGS.AutoShoot = v end); y=y+20
+MakeToggle("Aim Lock (chỉ bám khi thấy)", y, function(v) SETTINGS.AimLock = v end); y=y+20
+MakeToggle("Auto Shoot (chỉ bắn khi thấy)", y, function(v) SETTINGS.AutoShoot = v end); y=y+20
 MakeToggle("Vòng FOV", y, function(v) SETTINGS.ShowFOV = v end); y=y+20
 MakeToggle("No Recoil", y, function(v) SETTINGS.NoRecoil = v end); y=y+20
 MakeToggle("No Spread", y, function(v) SETTINGS.NoSpread = v end); y=y+20
@@ -293,14 +292,14 @@ ContactLabel.TextSize = 9
 ContactLabel.Font = Enum.Font.GothamBold
 ContentFrame.CanvasSize = UDim2.new(0, 0, 0, y + 40)
 
--- Toggle menu khi click logo
+-- Toggle menu
 Logo.MouseButton1Click:Connect(function()
     menuVisible = not menuVisible
     MainFrame.Visible = menuVisible
     Logo.BackgroundTransparency = menuVisible and 0.3 or 0.7
 end)
 
--- ======================== ESP ========================
+-- ======================== ESP (giữ nguyên, không ảnh hưởng) ========================
 local function safeRemove(d)
     if d and d.Remove then pcall(d.Remove, d) end
 end
@@ -451,42 +450,48 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ======================== AIM HELPERS ========================
-local function IsTargetVisible(part)
-    if not part then return false end
+-- ======================== KIỂM TRA TẦM NHÌN (KHÔNG XUYÊN TƯỜNG) ========================
+local function isTargetVisible(part)
+    if not part or not part.Parent then return false end
     local origin = Camera.CFrame.Position
-    local dir = part.Position - origin
-    local ray = workspace:Raycast(origin, dir, RaycastParams.new())
-    return not ray or ray.Instance:IsDescendantOf(part.Parent)
+    local direction = part.Position - origin
+    local rayParams = RaycastParams.new()
+    rayParams.FilterDescendantsInstances = {LocalPlayer.Character}
+    rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+    local result = workspace:Raycast(origin, direction, rayParams)
+    if not result then return true end
+    if result.Instance:IsDescendantOf(part.Parent) then return true end
+    return false
 end
 
-local function getBestTarget(skipVis)
+-- ======================== TÌM MỤC TIÊU TỐT NHẤT (CHỈ VISIBLE) ========================
+local function getBestVisibleTarget()
     local center = Camera.ViewportSize / 2
-    local best, bestAng = nil, FOV_RADIUS
+    local bestTarget = nil
+    local bestAngle = FOV_RADIUS
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
             local part = p.Character:FindFirstChild(AIM_TARGET_PART)
             local hum = p.Character:FindFirstChildOfClass("Humanoid")
             if part and hum and hum.Health > 0 then
-                local pos, on = Camera:WorldToViewportPoint(part.Position)
-                if on then
-                    local ang = (Vector2.new(pos.X, pos.Y) - center).Magnitude
-                    if ang < bestAng and (skipVis or IsTargetVisible(part)) then
-                        bestAng = ang
-                        best = p
+                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                if onScreen then
+                    local angle = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                    if angle < bestAngle and isTargetVisible(part) then
+                        bestAngle = angle
+                        bestTarget = p
                     end
                 end
             end
         end
     end
-    return best
+    return bestTarget
 end
 
--- ======================== AIM LOCK 100% (CHẶT) ========================
--- Chạy liên tục, bám cứng vào mục tiêu gần nhất trong FOV, bỏ qua tầm nhìn.
+-- ======================== AIM LOCK (CHỈ BÁM KHI NHÌN THẤY) ========================
 RunService.RenderStepped:Connect(function()
     if SETTINGS.AimLock then
-        local target = getBestTarget(true) -- true = bỏ qua visibility, vẫn bám cả sau lưng
+        local target = getBestVisibleTarget()
         if target and target.Character then
             local targetPart = target.Character:FindFirstChild(AIM_TARGET_PART)
             if targetPart then
@@ -496,11 +501,11 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ======================== SNAP ON FIRE ========================
+-- ======================== SNAP KHI BẮN (CHỈ XOAY KHI NHÌN THẤY) ========================
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.UserInputType == Enum.UserInputType.MouseButton1 and SETTINGS.SnapOnFire then
-        local t = getBestTarget(true)
+        local t = getBestVisibleTarget()
         if t and t.Character then
             local part = t.Character:FindFirstChild(AIM_TARGET_PART)
             if part then
@@ -510,7 +515,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- ======================== SILENT AIM HOOK ========================
+-- ======================== SILENT AIM (CHỈ HOOK KHI THẤY) ========================
 local hooked = false
 local function hookSilent()
     if hooked then return end
@@ -521,10 +526,10 @@ local function hookSilent()
     mt.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
         if method == "FireServer" and SETTINGS.SilentAim then
-            local target = getBestTarget(true)
+            local target = getBestVisibleTarget()
             if target and target.Character then
                 local targetPart = target.Character:FindFirstChild(AIM_TARGET_PART)
-                if targetPart then
+                if targetPart and isTargetVisible(targetPart) then
                     local args = {...}
                     for i, v in pairs(args) do
                         if typeof(v) == "Vector3" then
@@ -550,7 +555,7 @@ task.spawn(function()
     end
 end)
 
--- ======================== AUTO SHOOT ========================
+-- ======================== AUTO SHOOT (CHỈ BẮN KHI THẤY MỤC TIÊU) ========================
 local lastShoot = 0
 local function Shoot()
     pcall(function()
@@ -565,12 +570,16 @@ local function Shoot()
         end
     end)
 end
+
 RunService.RenderStepped:Connect(function()
     if SETTINGS.AutoShoot then
-        local now = tick()
-        if now - lastShoot > 0.033 then
-            Shoot()
-            lastShoot = now
+        local targetVisible = getBestVisibleTarget() ~= nil
+        if targetVisible then
+            local now = tick()
+            if now - lastShoot > 0.033 then
+                Shoot()
+                lastShoot = now
+            end
         end
     end
     if SETTINGS.ShowFOV and Camera then
@@ -583,7 +592,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ======================== THU GỌN MENU ========================
+-- Thu gọn menu
 local collapsed = false
 CollapseBtn.MouseButton1Click:Connect(function()
     collapsed = not collapsed
@@ -594,4 +603,4 @@ CollapseBtn.MouseButton1Click:Connect(function()
 end)
 
 MainFrame.Visible = true
-print("✅ Đã load: Aim Lock 100% | FOV 450 touch | Logo bên trái")
+print("✅ Đã load: Chỉ bắn/ghim khi có góc bắn (không xuyên tường). Logo bên trái, FOV cảm ứng.")
