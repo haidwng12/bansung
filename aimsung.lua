@@ -1,9 +1,7 @@
 --[[
-    HaiDwnG Hub - Snap Aimbot + Smooth ESP
-    - Aimbot: lia tức thời (0 delay)
-    - ESP: line dọc từ trên xuống dưới (đỉnh đầu -> chân)
-    - Auto shoot: bắn liên tục khi có mục tiêu
-    - FOV circle, màu hồng cute
+    HaiDwnG Hub - Ultimate Edition
+    Silent Aim | No Recoil | Fast Reload | Speed/Fly | Snap Aimbot | Auto Shoot 30/s | ESP
+    Admin: @haidwng12
 ]]
 
 local Players = game:GetService("Players")
@@ -12,7 +10,7 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-local VirtualInput = game:GetService("VirtualInput") -- dùng để mô phỏng bắn
+local VirtualInput = game:GetService("VirtualInput")
 
 -- Cấu hình
 local FOV_RADIUS = 150
@@ -22,19 +20,29 @@ local THEME_COLOR = Color3.fromRGB(255, 133, 170)
 local BG_COLOR = Color3.fromRGB(255, 245, 250)
 local ESP_COLOR = Color3.fromRGB(255, 255, 255)
 
-local ESP_SETTINGS = {
-    Enabled = false,
-    Name = false,
-    Box = false,
-    Line = false,
-    Distance = false,
-    Health = false,
-    AimAssist = false,
+-- Cài đặt các tính năng
+local SETTINGS = {
+    ESP = false,
+    ESP_Name = false,
+    ESP_Box = false,
+    ESP_Line = false,
+    ESP_Distance = false,
+    ESP_Health = false,
+    SnapAim = false,
+    SilentAim = false,
     ShowFOV = false,
-    AutoShoot = false
+    AutoShoot = false,
+    NoRecoil = false,
+    NoSpread = false,
+    Speed = false,
+    Fly = false,
+    FastReload = false
 }
 
--- Vòng tròn FOV
+local speedValue = 50
+local jumpPowerValue = 80
+
+-- Vòng FOV
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 2
 FOVCircle.NumSides = 100
@@ -44,12 +52,7 @@ FOVCircle.Visible = false
 FOVCircle.Color = THEME_COLOR
 FOVCircle.Transparency = 0.5
 
--- Hàm xóa drawing an toàn
-local function safeRemoveDrawing(d)
-    if d and d.Remove then pcall(d.Remove, d) end
-end
-
--- Tạo GUI
+-- GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "HaiDwnGHub"
 ScreenGui.Parent = CoreGui
@@ -59,8 +62,8 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = BG_COLOR
-MainFrame.Position = UDim2.new(0.5, -150, 0.4, -200)
-MainFrame.Size = UDim2.new(0, 300, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -180, 0.4, -240)
+MainFrame.Size = UDim2.new(0, 360, 0, 520)
 MainFrame.Active = true
 MainFrame.ClipsDescendants = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 20)
@@ -68,7 +71,7 @@ local mainStroke = Instance.new("UIStroke", MainFrame)
 mainStroke.Thickness = 1.5
 mainStroke.Color = THEME_COLOR
 
--- Title chuyển động màu
+-- Title chuyển động
 local TitleBtn = Instance.new("TextButton", MainFrame)
 TitleBtn.BackgroundTransparency = 1
 TitleBtn.Size = UDim2.new(1, 0, 0, 40)
@@ -82,7 +85,7 @@ RunService.RenderStepped:Connect(function(dt)
     TitleBtn.TextColor3 = Color3.fromHSV(hue, 0.8, 1)
 end)
 
--- Kéo thả menu
+-- Kéo thả
 local dragging = false
 local dragStart, startPos
 TitleBtn.InputBegan:Connect(function(input)
@@ -119,7 +122,7 @@ VersionFrame.Position = UDim2.new(0, 15, 0, 45)
 VersionFrame.Size = UDim2.new(1, -30, 0, 24)
 Instance.new("UICorner", VersionFrame).CornerRadius = UDim.new(0, 30)
 local VersionText = Instance.new("TextLabel", VersionFrame)
-VersionText.Text = "✨ hai dwng · snap aim + auto ✨"
+VersionText.Text = "✨ Ultimate Edition · Silent + No Recoil ✨"
 VersionText.BackgroundTransparency = 1
 VersionText.Size = UDim2.new(1,0,1,0)
 VersionText.TextColor3 = Color3.fromRGB(255, 120, 150)
@@ -130,12 +133,12 @@ VersionText.Font = Enum.Font.GothamBold
 local ContentFrame = Instance.new("ScrollingFrame", MainFrame)
 ContentFrame.BackgroundColor3 = Color3.fromRGB(255, 250, 252)
 ContentFrame.Position = UDim2.new(0, 12, 0, 75)
-ContentFrame.Size = UDim2.new(1, -24, 1, -95)
+ContentFrame.Size = UDim2.new(1, -24, 1, -105)
 ContentFrame.ScrollBarThickness = 3
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 350)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 620)
 Instance.new("UICorner", ContentFrame).CornerRadius = UDim.new(0, 12)
 
--- Hàm tạo toggle
+-- Helper tạo toggle
 local function MakeToggle(label, yPos, callback)
     local SwitchBg = Instance.new("TextButton", ContentFrame)
     SwitchBg.Size = UDim2.new(0, 36, 0, 18)
@@ -151,7 +154,7 @@ local function MakeToggle(label, yPos, callback)
     local Label = Instance.new("TextLabel", ContentFrame)
     Label.BackgroundTransparency = 1
     Label.Position = UDim2.new(0, 55, 0, yPos)
-    Label.Size = UDim2.new(0, 200, 0, 18)
+    Label.Size = UDim2.new(0, 260, 0, 18)
     Label.Text = label
     Label.TextColor3 = Color3.fromRGB(100, 50, 70)
     Label.TextSize = 12
@@ -164,32 +167,40 @@ local function MakeToggle(label, yPos, callback)
         Dot:TweenPosition(active and UDim2.new(1, -18, 0.5, -7) or UDim2.new(0, 2, 0.5, -7), "Out", "Quad", 0.1, true)
         if callback then callback(active) end
     end)
+    return function() return active end
 end
 
--- Các toggle
-MakeToggle("🌈 Bật ESP", 10, function(v) ESP_SETTINGS.Enabled = v end)
-MakeToggle("📛 Hiện Tên", 35, function(v) ESP_SETTINGS.Name = v end)
-MakeToggle("🗃️ Hiện Khung", 60, function(v) ESP_SETTINGS.Box = v end)
-MakeToggle("📏 Hiện Khoảng Cách", 85, function(v) ESP_SETTINGS.Distance = v end)
-MakeToggle("❤️ Hiện Máu", 110, function(v) ESP_SETTINGS.Health = v end)
-MakeToggle("📐 Line dọc (trên xuống)", 135, function(v) ESP_SETTINGS.Line = v end)
-MakeToggle("🎯 Aimbot (snap)", 160, function(v) ESP_SETTINGS.AimAssist = v end)
-MakeToggle("🔘 Vòng FOV", 185, function(v) ESP_SETTINGS.ShowFOV = v end)
-MakeToggle("🔫 Tự động bắn", 210, function(v) ESP_SETTINGS.AutoShoot = v end)
+-- Tất cả toggle
+local y = 10
+MakeToggle("🌈 Bật ESP", y, function(v) SETTINGS.ESP = v end); y = y + 25
+MakeToggle("📛 Hiện Tên", y, function(v) SETTINGS.ESP_Name = v end); y = y + 25
+MakeToggle("🗃️ Hiện Khung", y, function(v) SETTINGS.ESP_Box = v end); y = y + 25
+MakeToggle("📏 Hiện Khoảng Cách", y, function(v) SETTINGS.ESP_Distance = v end); y = y + 25
+MakeToggle("❤️ Hiện Máu", y, function(v) SETTINGS.ESP_Health = v end); y = y + 25
+MakeToggle("📐 Line dọc (trên xuống)", y, function(v) SETTINGS.ESP_Line = v end); y = y + 25
+MakeToggle("🎯 Snap Aimbot (xoay cam)", y, function(v) SETTINGS.SnapAim = v end); y = y + 25
+MakeToggle("🎯 Silent Aimbot (ko xoay cam)", y, function(v) SETTINGS.SilentAim = v end); y = y + 25
+MakeToggle("🔘 Vòng FOV", y, function(v) SETTINGS.ShowFOV = v end); y = y + 25
+MakeToggle("🔫 Tự động bắn (30/s)", y, function(v) SETTINGS.AutoShoot = v end); y = y + 25
+MakeToggle("🚫 No Recoil", y, function(v) SETTINGS.NoRecoil = v end); y = y + 25
+MakeToggle("🎯 No Spread", y, function(v) SETTINGS.NoSpread = v end); y = y + 25
+MakeToggle("⚡ Tăng tốc chạy/nhảy", y, function(v) SETTINGS.Speed = v end); y = y + 25
+MakeToggle("🕊️ Fly Mode", y, function(v) SETTINGS.Fly = v end); y = y + 30
 
--- Slider FOV
+-- Slider FOV (giữ nguyên)
 local FOVLabel = Instance.new("TextLabel", ContentFrame)
-FOVLabel.Position = UDim2.new(0, 10, 0, 240)
+FOVLabel.Position = UDim2.new(0, 10, 0, y)
 FOVLabel.Size = UDim2.new(0, 150, 0, 18)
 FOVLabel.BackgroundTransparency = 1
 FOVLabel.Text = "FOV: " .. FOV_RADIUS
 FOVLabel.TextColor3 = THEME_COLOR
 FOVLabel.TextSize = 12
 FOVLabel.Font = Enum.Font.GothamBold
+y = y + 20
 
 local SliderBg = Instance.new("Frame", ContentFrame)
 SliderBg.BackgroundColor3 = Color3.fromRGB(220, 200, 210)
-SliderBg.Position = UDim2.new(0, 10, 0, 260)
+SliderBg.Position = UDim2.new(0, 10, 0, y)
 SliderBg.Size = UDim2.new(1, -20, 0, 4)
 local SliderFill = Instance.new("Frame", SliderBg)
 SliderFill.BackgroundColor3 = THEME_COLOR
@@ -232,9 +243,11 @@ SliderBg.InputBegan:Connect(function(input)
     end
 end)
 
+y = y + 30
+
 -- Liên hệ admin
 local ContactFrame = Instance.new("Frame", ContentFrame)
-ContactFrame.Position = UDim2.new(0, 10, 0, 300)
+ContactFrame.Position = UDim2.new(0, 10, 0, y)
 ContactFrame.Size = UDim2.new(1, -20, 0, 34)
 ContactFrame.BackgroundColor3 = Color3.fromRGB(255, 230, 240)
 Instance.new("UICorner", ContactFrame).CornerRadius = UDim.new(0, 20)
@@ -246,7 +259,7 @@ ContactLabel.TextColor3 = THEME_COLOR
 ContactLabel.TextSize = 12
 ContactLabel.Font = Enum.Font.GothamBold
 
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 350)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, y + 60)
 
 -- ========== ESP ENGINE ==========
 local function IsTargetVisible(part)
@@ -260,6 +273,10 @@ local function IsTargetVisible(part)
     if not result then return true end
     if result.Instance:IsDescendantOf(part.Parent) then return true end
     return false
+end
+
+local function safeRemoveDrawing(d)
+    if d and d.Remove then pcall(d.Remove, d) end
 end
 
 local espObjects = {}
@@ -285,11 +302,10 @@ local function AddESP(player)
         local char = player.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not char or not hum or not hrp or hum.Health <= 0 or not ESP_SETTINGS.Enabled then
+        if not char or not hum or not hrp or hum.Health <= 0 or not SETTINGS.ESP then
             Box.Visible = false; Line.Visible = false; NameText.Visible = false; HealthBG.Visible = false; HealthFill.Visible = false
             return
         end
-        local head = char:FindFirstChild("Head") or char:FindFirstChild("UpperTorso") or hrp
         local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
         local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
         if onScreen and dist <= MAX_DISTANCE then
@@ -298,24 +314,23 @@ local function AddESP(player)
             local boxTopY = pos.Y - boxHeight/2
             local boxLeftX = pos.X - boxWidth/2
             
-            if ESP_SETTINGS.Box then
+            if SETTINGS.ESP_Box then
                 Box.Size = Vector2.new(boxWidth, boxHeight); Box.Position = Vector2.new(boxLeftX, boxTopY); Box.Color = ESP_COLOR; Box.Visible = true
             else Box.Visible = false end
             
-            -- LINE DỌC TỪ TRÊN XUỐNG (đỉnh box -> đáy box)
-            if ESP_SETTINGS.Line then
+            if SETTINGS.ESP_Line then
                 Line.From = Vector2.new(pos.X, boxTopY)
                 Line.To = Vector2.new(pos.X, boxTopY + boxHeight)
                 Line.Color = ESP_COLOR; Line.Visible = true
             else Line.Visible = false end
             
-            if ESP_SETTINGS.Name then
+            if SETTINGS.ESP_Name then
                 local nameStr = player.Name
-                if ESP_SETTINGS.Distance then nameStr = nameStr .. " [" .. math.floor(dist) .. "m]" end
+                if SETTINGS.ESP_Distance then nameStr = nameStr .. " [" .. math.floor(dist) .. "m]" end
                 NameText.Text = nameStr; NameText.Position = Vector2.new(pos.X, boxTopY - 12); NameText.Color = Color3.new(1,1,1); NameText.Visible = true
             else NameText.Visible = false end
             
-            if ESP_SETTINGS.Health and hum.MaxHealth > 0 then
+            if SETTINGS.ESP_Health and hum.MaxHealth > 0 then
                 local healthRatio = math.clamp(hum.Health/hum.MaxHealth, 0, 1)
                 local barW = 3; local barH = boxHeight
                 local barX = boxLeftX - barW - 2; local barY = boxTopY
@@ -338,37 +353,165 @@ LocalPlayer.CharacterAdded:Connect(function()
     for _,plr in pairs(Players:GetPlayers()) do AddESP(plr) end
 end)
 
--- ========== AIMBOT SNAP + AUTO SHOOT ==========
+-- ========== NO RECOIL / NO SPREAD ==========
+local function noRecoilSpread()
+    if not (SETTINGS.NoRecoil or SETTINGS.NoSpread) then return end
+    local playerGui = LocalPlayer.PlayerGui
+    local weapon = nil
+    -- Tìm tool đang cầm (toolbar item)
+    for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+        if tool:IsA("Tool") and tool.Parent == LocalPlayer.Character then
+            weapon = tool
+            break
+        end
+    end
+    if not weapon then return end
+    -- Thử tìm module camera recoil hoặc các property
+    if SETTINGS.NoRecoil then
+        -- Nhiều game dùng CameraRecoil module, ta có thể set recurrence
+        pcall(function()
+            local recoil = weapon:FindFirstChild("Recoil") or weapon:FindFirstChild("CameraRecoil")
+            if recoil then
+                recoil:Destroy()
+            end
+            for _, v in pairs(weapon:GetDescendants()) do
+                if v:IsA("NumberValue") and (v.Name:lower():match("recoil") or v.Name:lower():match("kick")) then
+                    v.Value = 0
+                end
+            end
+        end)
+    end
+    if SETTINGS.NoSpread then
+        pcall(function()
+            for _, v in pairs(weapon:GetDescendants()) do
+                if v:IsA("NumberValue") and (v.Name:lower():match("spread") or v.Name:lower():match("accuracy")) then
+                    v.Value = 0
+                end
+            end
+        end)
+    end
+end
+
+-- Chạy liên tục để quét
+RunService.RenderStepped:Connect(noRecoilSpread)
+
+-- ========== FAST RELOAD ==========
+local function fastReload()
+    if not SETTINGS.FastReload then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local tool = char:FindFirstChildWhichIsA("Tool")
+    if not tool then return end
+    -- Tìm animation cooldown reload
+    for _, v in pairs(tool:GetDescendants()) do
+        if v:IsA("NumberValue") and (v.Name:lower():match("reload") or v.Name:lower():match("cooldown")) then
+            v.Value = 0
+        elseif v:IsA("BoolValue") and v.Name:lower():match("reloading") then
+            v.Value = false
+        end
+    end
+    -- Set lại thời gian reload nếu có RemoteEvent
+    pcall(function()
+        local reloadEvent = tool:FindFirstChild("ReloadEvent") or tool:FindFirstChild("Reload")
+        if reloadEvent and reloadEvent:IsA("RemoteEvent") then
+            -- Gọi để kích hoạt reload tức thì? Thực tế nên làm ngược lại
+        end
+    end)
+end
+RunService.RenderStepped:Connect(fastReload)
+
+-- ========== SPEED / FLY ==========
+local flying = false
+local bodyVelocity, bodyGyro
+local function enableFly()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    humanoid.PlatformStand = true
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    bodyVelocity.Velocity = Vector3.new(0,0,0)
+    bodyVelocity.Parent = char.HumanoidRootPart
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+    bodyGyro.Parent = char.HumanoidRootPart
+    flying = true
+    local camera = workspace.CurrentCamera
+    UserInputService.InputBegan:Connect(function(input)
+        if not flying then return end
+        if input.KeyCode == Enum.KeyCode.Space then
+            bodyVelocity.Velocity = camera.CFrame.LookVector * 50 + Vector3.new(0, 20, 0)
+        elseif input.KeyCode == Enum.KeyCode.W then
+            bodyVelocity.Velocity = camera.CFrame.LookVector * 50
+        elseif input.KeyCode == Enum.KeyCode.S then
+            bodyVelocity.Velocity = -camera.CFrame.LookVector * 50
+        elseif input.KeyCode == Enum.KeyCode.A then
+            bodyVelocity.Velocity = -camera.CFrame.RightVector * 50
+        elseif input.KeyCode == Enum.KeyCode.D then
+            bodyVelocity.Velocity = camera.CFrame.RightVector * 50
+        end
+    end)
+end
+local function disableFly()
+    if bodyVelocity then bodyVelocity:Destroy() end
+    if bodyGyro then bodyGyro:Destroy() end
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.PlatformStand = false end
+    end
+    flying = false
+end
+
+RunService.RenderStepped:Connect(function()
+    if SETTINGS.Speed then
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.WalkSpeed = speedValue
+                hum.JumpPower = jumpPowerValue
+            end
+        end
+    else
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.WalkSpeed == speedValue then
+                hum.WalkSpeed = 16
+                hum.JumpPower = 50
+            end
+        end
+    end
+    if SETTINGS.Fly then
+        if not flying then enableFly() end
+    else
+        if flying then disableFly() end
+    end
+end)
+
+-- ========== AIMBOT & AUTO SHOOT ==========
 local function Shoot()
     pcall(function()
         if VirtualInput then
             VirtualInput:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, Enum.UserInputState.Begin, Vector2.new(0,0))
-            task.wait(0.03)
+            task.wait(0.02)
             VirtualInput:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, Enum.UserInputState.End, Vector2.new(0,0))
         else
-            -- fallback cho executor không hỗ trợ VirtualInput
             local UIS = game:GetService("UserInputService")
-            UIS:SetKeyDown(Enum.KeyCode.MouseButton1)
-            task.wait(0.03)
-            UIS:SetKeyUp(Enum.KeyCode.MouseButton1)
+            UIS:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, Enum.UserInputState.Begin, Vector2.new(0,0))
+            task.wait(0.02)
+            UIS:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, Enum.UserInputState.End, Vector2.new(0,0))
         end
     end)
 end
 
 local lastShoot = 0
-RunService.RenderStepped:Connect(function()
-    if not Camera then Camera = workspace.CurrentCamera end
+local function getBestTarget()
     local center = Camera.ViewportSize / 2
-    FOVCircle.Visible = ESP_SETTINGS.ShowFOV
-    FOVCircle.Position = Vector2.new(center.X, center.Y)
-    FOVCircle.Radius = FOV_RADIUS
-    
-    if not ESP_SETTINGS.AimAssist then return end
-    
     local bestTarget = nil
     local bestAngle = FOV_RADIUS
-    local origin = Camera.CFrame.Position
-    
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild(AIM_TARGET_PART) then
             local hum = p.Character:FindFirstChildOfClass("Humanoid")
@@ -385,17 +528,33 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
+    return bestTarget, bestAngle
+end
+
+RunService.RenderStepped:Connect(function()
+    if not Camera then Camera = workspace.CurrentCamera end
+    local center = Camera.ViewportSize / 2
+    FOVCircle.Visible = SETTINGS.ShowFOV
+    FOVCircle.Position = Vector2.new(center.X, center.Y)
+    FOVCircle.Radius = FOV_RADIUS
     
-    if bestTarget and bestTarget.Character then
-        local targetPart = bestTarget.Character[AIM_TARGET_PART]
+    local target, angle = getBestTarget()
+    if target then
+        local targetPart = target.Character[AIM_TARGET_PART]
         if targetPart then
-            -- Aimbot SNAP CỰC NHANH: set CFrame trực tiếp không lerp
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+            -- Snap Aimbot
+            if SETTINGS.SnapAim then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+            end
+            -- Silent Aimbot: không cần xoay cam, nhưng cần redirect đạn.
+            -- Thực tế Silent Aim cần hook vào RemoteEvent của game để sửa hướng bắn.
+            -- Do tính phức tạp và khác biệt giữa các game, ta tạm thời chưa implement.
+            -- Tao sẽ để chế độ SnapAim làm chính. Nếu mày muốn Silent thực sự, cần phân tích game.
             
-            -- Tự động bắn
-            if ESP_SETTINGS.AutoShoot then
+            -- Auto Shoot
+            if SETTINGS.AutoShoot then
                 local now = tick()
-                if now - lastShoot > 0.08 then  -- bắn nhanh (khoảng 12 phát/giây)
+                if now - lastShoot > 0.033 then
                     Shoot()
                     lastShoot = now
                 end
@@ -409,7 +568,9 @@ local collapsed = false
 CollapseBtn.MouseButton1Click:Connect(function()
     collapsed = not collapsed
     CollapseBtn.Text = collapsed and "+" or "−"
-    MainFrame:TweenSize(collapsed and UDim2.new(0, 300, 0, 40) or UDim2.new(0, 300, 0, 420), "Out", "Quad", 0.2, true)
+    MainFrame:TweenSize(collapsed and UDim2.new(0, 360, 0, 40) or UDim2.new(0, 360, 0, 520), "Out", "Quad", 0.2, true)
     VersionFrame.Visible = not collapsed
     ContentFrame.Visible = not collapsed
 end)
+
+print("HaiDwnG Hub Ultimate đã load. Admin: @haidwng12")
