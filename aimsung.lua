@@ -1,8 +1,6 @@
 --[[
-    HaiDwnG Hub - Ultimate Full
-    - Silent Aim (hook remote) + Snap on Fire
-    - Logo nhỏ toggle menu
-    - Admin: @haidwng12
+    HaiDwnG Hub - Fixed Logo & No Overflow
+    Admin: @haidwng12
 ]]
 
 local Players = game:GetService("Players")
@@ -21,8 +19,8 @@ local SETTINGS = {
     ESP_Line = false,
     ESP_Distance = false,
     ESP_Health = false,
-    SilentAim = false,      -- aim không xoay cam
-    SnapOnFire = false,     -- xoay cam khi bắn
+    SilentAim = false,
+    SnapOnFire = false,
     AutoShoot = false,
     ShowFOV = false,
     NoRecoil = false,
@@ -48,14 +46,14 @@ FOVCircle.Visible = false
 FOVCircle.Color = THEME_COLOR
 FOVCircle.Transparency = 0.5
 
--- ========== LOGO NHỎ (toggle menu) ==========
+-- ========== LOGO NHỎ (góc trái trên, kéo thả, click toggle menu) ==========
 local Logo = Instance.new("TextButton")
 Logo.Name = "HaiDwnG_Logo"
 Logo.Parent = CoreGui
 Logo.Size = UDim2.new(0, 45, 0, 45)
-Logo.Position = UDim2.new(0, 15, 0, 100)
+Logo.Position = UDim2.new(0, 10, 0, 10)  -- cố định góc trên trái, không bị tràn
 Logo.BackgroundColor3 = THEME_COLOR
-Logo.BackgroundTransparency = 0.2
+Logo.BackgroundTransparency = 0.3
 Logo.Text = "🌸"
 Logo.TextColor3 = Color3.new(1,1,1)
 Logo.TextSize = 28
@@ -65,7 +63,7 @@ local LogoStroke = Instance.new("UIStroke", Logo)
 LogoStroke.Color = Color3.fromRGB(255,255,255)
 LogoStroke.Thickness = 1
 
--- Kéo thả logo (không ảnh hưởng đến menu)
+-- Kéo thả logo
 local logoDragging = false
 local logoDragStart, logoStartPos
 Logo.InputBegan:Connect(function(input)
@@ -85,18 +83,18 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== MENU CHÍNH ==========
+-- ========== MENU CHÍNH (kích thước chuẩn, cuộn được, không tràn) ==========
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "HaiDwnGHub"
 ScreenGui.Parent = CoreGui
 ScreenGui.IgnoreGuiInset = true
-local mainMenuVisible = true
+local menuVisible = true
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = BG_COLOR
-MainFrame.Position = UDim2.new(0.5, -180, 0.4, -240)
-MainFrame.Size = UDim2.new(0, 360, 0, 520)
+MainFrame.Position = UDim2.new(0.5, -160, 0.4, -200)  -- giữa màn hình, không sát mép
+MainFrame.Size = UDim2.new(0, 320, 0, 400)
 MainFrame.Active = true
 MainFrame.ClipsDescendants = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 20)
@@ -108,7 +106,7 @@ strokeMain.Color = THEME_COLOR
 local TitleBtn = Instance.new("TextButton", MainFrame)
 TitleBtn.BackgroundTransparency = 1
 TitleBtn.Size = UDim2.new(1, 0, 0, 40)
-TitleBtn.Text = "🌸 HaiDwnG Hub Ultimate 🌸"
+TitleBtn.Text = "🌸 HaiDwnG Hub 🌸"
 TitleBtn.TextSize = 18
 TitleBtn.Font = Enum.Font.GothamBlack
 local hue = 0
@@ -154,7 +152,7 @@ VersionFrame.Position = UDim2.new(0, 15, 0, 45)
 VersionFrame.Size = UDim2.new(1, -30, 0, 24)
 Instance.new("UICorner", VersionFrame).CornerRadius = UDim.new(0, 30)
 local VersionText = Instance.new("TextLabel", VersionFrame)
-VersionText.Text = "✨ Silent Aim + Snap on Fire + Auto ✨"
+VersionText.Text = "✨ Auto + Silent + Snap ✨"
 VersionText.BackgroundTransparency = 1
 VersionText.Size = UDim2.new(1,0,1,0)
 VersionText.TextColor3 = Color3.fromRGB(255, 120, 150)
@@ -164,11 +162,12 @@ VersionText.Font = Enum.Font.GothamBold
 local ContentFrame = Instance.new("ScrollingFrame", MainFrame)
 ContentFrame.BackgroundColor3 = Color3.fromRGB(255, 250, 252)
 ContentFrame.Position = UDim2.new(0, 12, 0, 75)
-ContentFrame.Size = UDim2.new(1, -24, 1, -105)
+ContentFrame.Size = UDim2.new(1, -24, 1, -95)
 ContentFrame.ScrollBarThickness = 3
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 620)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 580)  -- đủ cao cho các toggle
 Instance.new("UICorner", ContentFrame).CornerRadius = UDim.new(0, 12)
 
+-- Hàm tạo toggle
 local function MakeToggle(label, yPos, callback)
     local bg = Instance.new("TextButton", ContentFrame)
     bg.Size = UDim2.new(0, 36, 0, 18)
@@ -184,7 +183,7 @@ local function MakeToggle(label, yPos, callback)
     local lbl = Instance.new("TextLabel", ContentFrame)
     lbl.BackgroundTransparency = 1
     lbl.Position = UDim2.new(0, 55, 0, yPos)
-    lbl.Size = UDim2.new(0, 260, 0, 18)
+    lbl.Size = UDim2.new(0, 230, 0, 18)
     lbl.Text = label
     lbl.TextColor3 = Color3.fromRGB(100, 50, 70)
     lbl.TextSize = 12
@@ -214,7 +213,7 @@ MakeToggle("🎯 No Spread", y, function(v) SETTINGS.NoSpread = v end); y=y+25
 MakeToggle("⚡ Tăng tốc chạy/nhảy", y, function(v) SETTINGS.Speed = v end); y=y+25
 MakeToggle("🕊️ Fly Mode", y, function(v) SETTINGS.Fly = v end); y=y+30
 
--- FOV Slider
+-- Slider FOV
 local FOVLabel = Instance.new("TextLabel", ContentFrame)
 FOVLabel.Position = UDim2.new(0, 10, 0, y)
 FOVLabel.Size = UDim2.new(0, 150, 0, 18)
@@ -271,6 +270,7 @@ SliderBg.InputBegan:Connect(function(input)
 end)
 y = y + 30
 
+-- Liên hệ admin
 local ContactFrame = Instance.new("Frame", ContentFrame)
 ContactFrame.Position = UDim2.new(0, 10, 0, y)
 ContactFrame.Size = UDim2.new(1, -20, 0, 34)
@@ -283,49 +283,36 @@ ContactLabel.BackgroundTransparency = 1
 ContactLabel.TextColor3 = THEME_COLOR
 ContactLabel.TextSize = 12
 ContactLabel.Font = Enum.Font.GothamBold
-
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, y + 60)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, y + 50)
 
 -- ========== TOGGLE MENU BẰNG LOGO ==========
 Logo.MouseButton1Click:Connect(function()
-    mainMenuVisible = not mainMenuVisible
-    MainFrame.Visible = mainMenuVisible
-    Logo.BackgroundTransparency = mainMenuVisible and 0.2 or 0.6
+    menuVisible = not menuVisible
+    MainFrame.Visible = menuVisible
+    Logo.BackgroundTransparency = menuVisible and 0.3 or 0.7
 end)
 
--- ========== ESP ENGINE ==========
-local function IsTargetVisible(part)
-    if not part then return false end
-    local origin = Camera.CFrame.Position
-    local direction = part.Position - origin
-    local ray = workspace:Raycast(origin, direction, RaycastParams.new())
-    return not ray or ray.Instance:IsDescendantOf(part.Parent)
-end
-
-local function safeRemoveDrawing(d)
+-- ========== ESP ENGINE (rút gọn nhưng đủ) ==========
+local function safeRemove(d)
     if d and d.Remove then pcall(d.Remove, d) end
 end
-
-local espObjects = {}
-local function CleanESP(player)
-    local data = espObjects[player]
-    if data then
-        for _, draw in pairs(data) do safeRemoveDrawing(draw) end
-        if data.conn then data.conn:Disconnect() end
-        espObjects[player] = nil
-    end
-end
-
-local function AddESP(player)
-    if player == LocalPlayer then return end
+local espData = {}
+local function AddESP(plr)
+    if plr == LocalPlayer then return end
     local box = Drawing.new("Square"); box.Thickness = 1; box.Filled = false
     local line = Drawing.new("Line"); line.Thickness = 1
     local name = Drawing.new("Text"); name.Size = 12; name.Center = true; name.Outline = true
     local hbg = Drawing.new("Square"); hbg.Thickness = 1; hbg.Filled = true; hbg.Color = Color3.new(0,0,0); hbg.Transparency = 0.5
     local hfill = Drawing.new("Square"); hfill.Thickness = 0; hfill.Filled = true
     local conn = RunService.RenderStepped:Connect(function()
-        if not player.Parent then CleanESP(player) return end
-        local char = player.Character
+        if not plr.Parent then
+            if espData[plr] then
+                for _, d in pairs(espData[plr]) do safeRemove(d) end
+                espData[plr] = nil
+            end
+            return
+        end
+        local char = plr.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not SETTINGS.ESP or not char or not hum or hum.Health <= 0 then
@@ -346,7 +333,7 @@ local function AddESP(player)
                 line.From = Vector2.new(pos.X, topY); line.To = Vector2.new(pos.X, topY + h); line.Color = ESP_COLOR; line.Visible = true
             else line.Visible = false end
             if SETTINGS.ESP_Name then
-                local txt = player.Name .. (SETTINGS.ESP_Distance and (" ["..math.floor(dist).."m]" or ""))
+                local txt = plr.Name .. (SETTINGS.ESP_Distance and (" ["..math.floor(dist).."m]" or ""))
                 name.Text = txt; name.Position = Vector2.new(pos.X, topY - 12); name.Color = Color3.new(1,1,1); name.Visible = true
             else name.Visible = false end
             if SETTINGS.ESP_Health then
@@ -361,15 +348,19 @@ local function AddESP(player)
             box.Visible = false; line.Visible = false; name.Visible = false; hbg.Visible = false; hfill.Visible = false
         end
     end)
-    espObjects[player] = {box,line,name,hbg,hfill,conn}
+    espData[plr] = {box, line, name, hbg, hfill, conn}
 end
-
 for _, p in pairs(Players:GetPlayers()) do AddESP(p) end
 Players.PlayerAdded:Connect(AddESP)
-Players.PlayerRemoving:Connect(CleanESP)
+Players.PlayerRemoving:Connect(function(p)
+    if espData[p] then
+        for _, d in pairs(espData[p]) do safeRemove(d) end
+        espData[p] = nil
+    end
+end)
 
 -- ========== WEAPON MODS ==========
-local function applyWeaponMods()
+local function applyMods()
     if not (SETTINGS.NoRecoil or SETTINGS.NoSpread or SETTINGS.FastReload) then return end
     local char = LocalPlayer.Character
     if not char then return end
@@ -391,46 +382,11 @@ local function applyWeaponMods()
         end
     end
 end
-RunService.RenderStepped:Connect(applyWeaponMods)
+RunService.RenderStepped:Connect(applyMods)
 
 -- ========== SPEED / FLY ==========
-local flying, bodyVel, bodyGyro = false
-local function fly()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    if not bodyVel then
-        bodyVel = Instance.new("BodyVelocity")
-        bodyVel.MaxForce = Vector3.new(1e6,1e6,1e6)
-        bodyGyro = Instance.new("BodyGyro")
-        bodyGyro.MaxTorque = Vector3.new(1e6,1e6,1e6)
-    end
-    bodyVel.Parent = hrp
-    bodyGyro.Parent = hrp
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.PlatformStand = true end
-    local cam = workspace.CurrentCamera
-    local move = Vector3.new()
-    if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + cam.CFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - cam.CFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - cam.CFrame.RightVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + cam.CFrame.RightVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0,20,0) end
-    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0,20,0) end
-    bodyVel.Velocity = move * 50
-    bodyGyro.CFrame = cam.CFrame
-end
-local function disableFly()
-    if bodyVel then bodyVel:Destroy() end
-    if bodyGyro then bodyGyro:Destroy() end
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then hum.PlatformStand = false end
-    end
-    flying = false
-end
+local flying = false
+local bv, bg
 RunService.RenderStepped:Connect(function()
     if SETTINGS.Speed then
         local char = LocalPlayer.Character
@@ -446,45 +402,85 @@ RunService.RenderStepped:Connect(function()
         end
     end
     if SETTINGS.Fly then
-        if not flying then flying = true end
-        fly()
+        if not flying then
+            flying = true
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                bv = Instance.new("BodyVelocity")
+                bv.MaxForce = Vector3.new(1e6,1e6,1e6)
+                bg = Instance.new("BodyGyro")
+                bg.MaxTorque = Vector3.new(1e6,1e6,1e6)
+                bv.Parent = char.HumanoidRootPart
+                bg.Parent = char.HumanoidRootPart
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum.PlatformStand = true end
+            end
+        end
+        local char = LocalPlayer.Character
+        if char and char.HumanoidRootPart and bv then
+            local cam = workspace.CurrentCamera
+            local move = Vector3.new()
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0,20,0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0,20,0) end
+            bv.Velocity = move * 50
+            bg.CFrame = cam.CFrame
+        end
     else
-        if flying then disableFly(); flying = false end
+        if flying then
+            if bv then bv:Destroy() end
+            if bg then bg:Destroy() end
+            local char = LocalPlayer.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum.PlatformStand = false end
+            end
+            flying = false
+        end
     end
 end)
 
--- ========== AIMBOT: GET TARGET ==========
-local function getBestTarget(skipVisibility)
+-- ========== AIM HELPERS ==========
+local function IsTargetVisible(part)
+    if not part then return false end
+    local origin = Camera.CFrame.Position
+    local dir = part.Position - origin
+    local ray = workspace:Raycast(origin, dir, RaycastParams.new())
+    return not ray or ray.Instance:IsDescendantOf(part.Parent)
+end
+
+local function getBestTarget(skipVis)
     local center = Camera.ViewportSize / 2
-    local bestTarget, bestAngle = nil, FOV_RADIUS
+    local best, bestAng = nil, FOV_RADIUS
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
             local part = p.Character:FindFirstChild(AIM_TARGET_PART)
             local hum = p.Character:FindFirstChildOfClass("Humanoid")
             if part and hum and hum.Health > 0 then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                if onScreen then
-                    local angle = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                    if angle < bestAngle then
-                        if skipVisibility or IsTargetVisible(part) then
-                            bestAngle = angle
-                            bestTarget = p
-                        end
+                local pos, on = Camera:WorldToViewportPoint(part.Position)
+                if on then
+                    local ang = (Vector2.new(pos.X, pos.Y) - center).Magnitude
+                    if ang < bestAng and (skipVis or IsTargetVisible(part)) then
+                        bestAng = ang
+                        best = p
                     end
                 end
             end
         end
     end
-    return bestTarget
+    return best
 end
 
--- Snap khi bắn
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
+-- Snap on fire
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
     if input.UserInputType == Enum.UserInputType.MouseButton1 and SETTINGS.SnapOnFire then
-        local target = getBestTarget(true)
-        if target and target.Character then
-            local part = target.Character:FindFirstChild(AIM_TARGET_PART)
+        local t = getBestTarget(true)
+        if t and t.Character then
+            local part = t.Character:FindFirstChild(AIM_TARGET_PART)
             if part then
                 Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
             end
@@ -492,59 +488,47 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- ========== SILENT AIM (HOOK REMOTE) ==========
-local oldNamecall
-local hooked = false
-local function setupSilentAim()
-    if not SETTINGS.SilentAim then return end
+-- Silent Aim hook
+local oldNamecall, hooked = nil, false
+local function hookSilent()
     if hooked then return end
     local mt = getrawmetatable(game)
+    if not mt then return end
     local old = mt.__namecall
     setreadonly(mt, false)
     mt.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
-        if method == "FireServer" then
-            local args = {...}
+        if method == "FireServer" and SETTINGS.SilentAim then
             local target = getBestTarget(true)
             if target and target.Character then
                 local targetPart = target.Character:FindFirstChild(AIM_TARGET_PART)
                 if targetPart then
-                    -- Chèn vị trí đích vào args nếu remote nhận tọa độ
+                    local args = {...}
                     for i, v in pairs(args) do
                         if typeof(v) == "Vector3" then
                             args[i] = targetPart.Position
                             break
                         end
                     end
+                    return old(self, unpack(args))
                 end
             end
-            return old(self, unpack(args))
         end
         return old(self, ...)
     end)
     setreadonly(mt, true)
     hooked = true
 end
-
--- Gọi lại khi toggle silent aim
-local silentAimEnabled = false
-MakeToggle("🎯 Silent Aim (đạn tự bay)", y, function(v) 
-    SETTINGS.SilentAim = v
-    if v and not hooked then setupSilentAim() end
-end) -- nhưng dòng này trùng, thực tế đã có toggle ở trên, không cần thêm. Tuy nhiên để đảm bảo hook, ta gọi setup khi bật.
-
--- Tự động setup khi script chạy (nếu silent aim được bật sau, ta vẫn gọi được nhờ toggle)
--- Thêm vào hàm toggle cũ? Không, tôi sẽ tạo một coroutine kiểm tra.
 task.spawn(function()
     while true do
         if SETTINGS.SilentAim and not hooked then
-            setupSilentAim()
+            hookSilent()
         end
         task.wait(1)
     end
 end)
 
--- ========== AUTO SHOOT ==========
+-- Auto shoot
 local lastShoot = 0
 local function Shoot()
     pcall(function()
@@ -559,7 +543,6 @@ local function Shoot()
         end
     end)
 end
-
 RunService.RenderStepped:Connect(function()
     if SETTINGS.AutoShoot then
         local now = tick()
@@ -583,11 +566,10 @@ local collapsed = false
 CollapseBtn.MouseButton1Click:Connect(function()
     collapsed = not collapsed
     CollapseBtn.Text = collapsed and "+" or "−"
-    MainFrame:TweenSize(collapsed and UDim2.new(0, 360, 0, 40) or UDim2.new(0, 360, 0, 520), "Out", "Quad", 0.2, true)
+    MainFrame:TweenSize(collapsed and UDim2.new(0, 320, 0, 40) or UDim2.new(0, 320, 0, 400), "Out", "Quad", 0.2, true)
     VersionFrame.Visible = not collapsed
     ContentFrame.Visible = not collapsed
 end)
 
--- Khởi tạo visible
 MainFrame.Visible = true
-print("🌸 HaiDwnG Hub đã sẵn sàng. Click logo 🌸 để bật/tắt menu.")
+print("✅ Đã load. Click logo 🌸 để ẩn/hiện menu. Không bị tràn màn.")
