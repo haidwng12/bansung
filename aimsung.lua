@@ -1,6 +1,6 @@
 --[[
-    HaiDwnG Hub - Fixed Logo & No Overflow
-    Admin: @haidwng12
+    HaiDwnG Hub - Mobile Optimized (280x350)
+    Logo bên trái, menu thu nhỏ, đầy đủ chức năng.
 ]]
 
 local Players = game:GetService("Players")
@@ -13,21 +13,11 @@ local VirtualInput = game:GetService("VirtualInput")
 
 -- Cấu hình
 local SETTINGS = {
-    ESP = false,
-    ESP_Name = false,
-    ESP_Box = false,
-    ESP_Line = false,
-    ESP_Distance = false,
-    ESP_Health = false,
-    SilentAim = false,
-    SnapOnFire = false,
-    AutoShoot = false,
-    ShowFOV = false,
-    NoRecoil = false,
-    NoSpread = false,
-    FastReload = false,
-    Speed = false,
-    Fly = false
+    ESP = false, ESP_Name = false, ESP_Box = false, ESP_Line = false,
+    ESP_Distance = false, ESP_Health = false,
+    SilentAim = false, SnapOnFire = false, AutoShoot = false,
+    ShowFOV = false, NoRecoil = false, NoSpread = false,
+    FastReload = false, Speed = false, Fly = false
 }
 local FOV_RADIUS = 150
 local AIM_TARGET_PART = "UpperTorso"
@@ -46,17 +36,17 @@ FOVCircle.Visible = false
 FOVCircle.Color = THEME_COLOR
 FOVCircle.Transparency = 0.5
 
--- ========== LOGO NHỎ (góc trái trên, kéo thả, click toggle menu) ==========
+-- Logo nhỏ bên trái
 local Logo = Instance.new("TextButton")
 Logo.Name = "HaiDwnG_Logo"
 Logo.Parent = CoreGui
-Logo.Size = UDim2.new(0, 45, 0, 45)
-Logo.Position = UDim2.new(0, 10, 0, 10)  -- cố định góc trên trái, không bị tràn
+Logo.Size = UDim2.new(0, 40, 0, 40)
+Logo.Position = UDim2.new(0, 5, 0, 5)
 Logo.BackgroundColor3 = THEME_COLOR
 Logo.BackgroundTransparency = 0.3
 Logo.Text = "🌸"
 Logo.TextColor3 = Color3.new(1,1,1)
-Logo.TextSize = 28
+Logo.TextSize = 24
 Logo.Font = Enum.Font.GothamBold
 Instance.new("UICorner", Logo).CornerRadius = UDim.new(1, 0)
 local LogoStroke = Instance.new("UIStroke", Logo)
@@ -83,7 +73,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== MENU CHÍNH (kích thước chuẩn, cuộn được, không tràn) ==========
+-- Menu chính thu nhỏ
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "HaiDwnGHub"
 ScreenGui.Parent = CoreGui
@@ -93,11 +83,11 @@ local menuVisible = true
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = BG_COLOR
-MainFrame.Position = UDim2.new(0.5, -160, 0.4, -200)  -- giữa màn hình, không sát mép
-MainFrame.Size = UDim2.new(0, 320, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -140, 0.4, -175)
+MainFrame.Size = UDim2.new(0, 280, 0, 350)
 MainFrame.Active = true
 MainFrame.ClipsDescendants = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 20)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
 local strokeMain = Instance.new("UIStroke", MainFrame)
 strokeMain.Thickness = 1.5
 strokeMain.Color = THEME_COLOR
@@ -105,9 +95,9 @@ strokeMain.Color = THEME_COLOR
 -- Title chuyển động
 local TitleBtn = Instance.new("TextButton", MainFrame)
 TitleBtn.BackgroundTransparency = 1
-TitleBtn.Size = UDim2.new(1, 0, 0, 40)
-TitleBtn.Text = "🌸 HaiDwnG Hub 🌸"
-TitleBtn.TextSize = 18
+TitleBtn.Size = UDim2.new(1, 0, 0, 35)
+TitleBtn.Text = "🌸 HaiDwnG Hub"
+TitleBtn.TextSize = 14
 TitleBtn.Font = Enum.Font.GothamBlack
 local hue = 0
 RunService.RenderStepped:Connect(function(dt)
@@ -138,102 +128,101 @@ end)
 
 -- Nút thu gọn
 local CollapseBtn = Instance.new("TextButton", MainFrame)
-CollapseBtn.Size = UDim2.new(0, 30, 0, 30)
-CollapseBtn.Position = UDim2.new(1, -35, 0, 5)
+CollapseBtn.Size = UDim2.new(0, 25, 0, 25)
+CollapseBtn.Position = UDim2.new(1, -30, 0, 5)
 CollapseBtn.BackgroundColor3 = Color3.fromRGB(255, 220, 230)
 CollapseBtn.Text = "−"
 CollapseBtn.TextColor3 = Color3.fromRGB(255, 100, 130)
-CollapseBtn.TextSize = 20
+CollapseBtn.TextSize = 16
 Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
 
 local VersionFrame = Instance.new("Frame", MainFrame)
 VersionFrame.BackgroundColor3 = Color3.fromRGB(255, 230, 240)
-VersionFrame.Position = UDim2.new(0, 15, 0, 45)
-VersionFrame.Size = UDim2.new(1, -30, 0, 24)
-Instance.new("UICorner", VersionFrame).CornerRadius = UDim.new(0, 30)
+VersionFrame.Position = UDim2.new(0, 10, 0, 40)
+VersionFrame.Size = UDim2.new(1, -20, 0, 18)
+Instance.new("UICorner", VersionFrame).CornerRadius = UDim.new(0, 20)
 local VersionText = Instance.new("TextLabel", VersionFrame)
-VersionText.Text = "✨ Auto + Silent + Snap ✨"
+VersionText.Text = "✨ Mobile | Silent + Snap ✨"
 VersionText.BackgroundTransparency = 1
 VersionText.Size = UDim2.new(1,0,1,0)
 VersionText.TextColor3 = Color3.fromRGB(255, 120, 150)
-VersionText.TextSize = 11
+VersionText.TextSize = 9
 VersionText.Font = Enum.Font.GothamBold
 
 local ContentFrame = Instance.new("ScrollingFrame", MainFrame)
 ContentFrame.BackgroundColor3 = Color3.fromRGB(255, 250, 252)
-ContentFrame.Position = UDim2.new(0, 12, 0, 75)
-ContentFrame.Size = UDim2.new(1, -24, 1, -95)
-ContentFrame.ScrollBarThickness = 3
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 580)  -- đủ cao cho các toggle
-Instance.new("UICorner", ContentFrame).CornerRadius = UDim.new(0, 12)
+ContentFrame.Position = UDim2.new(0, 8, 0, 62)
+ContentFrame.Size = UDim2.new(1, -16, 1, -80)
+ContentFrame.ScrollBarThickness = 2
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 520)
+Instance.new("UICorner", ContentFrame).CornerRadius = UDim.new(0, 10)
 
--- Hàm tạo toggle
 local function MakeToggle(label, yPos, callback)
     local bg = Instance.new("TextButton", ContentFrame)
-    bg.Size = UDim2.new(0, 36, 0, 18)
-    bg.Position = UDim2.new(0, 10, 0, yPos)
+    bg.Size = UDim2.new(0, 30, 0, 15)
+    bg.Position = UDim2.new(0, 8, 0, yPos)
     bg.BackgroundColor3 = Color3.fromRGB(220, 200, 210)
     bg.Text = ""
     Instance.new("UICorner", bg).CornerRadius = UDim.new(1, 0)
     local dot = Instance.new("Frame", bg)
-    dot.Size = UDim2.new(0, 14, 0, 14)
-    dot.Position = UDim2.new(0, 2, 0.5, -7)
+    dot.Size = UDim2.new(0, 11, 0, 11)
+    dot.Position = UDim2.new(0, 2, 0.5, -5.5)
     dot.BackgroundColor3 = Color3.new(1,1,1)
     Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
     local lbl = Instance.new("TextLabel", ContentFrame)
     lbl.BackgroundTransparency = 1
-    lbl.Position = UDim2.new(0, 55, 0, yPos)
-    lbl.Size = UDim2.new(0, 230, 0, 18)
+    lbl.Position = UDim2.new(0, 45, 0, yPos)
+    lbl.Size = UDim2.new(0, 210, 0, 15)
     lbl.Text = label
-    lbl.TextColor3 = Color3.fromRGB(100, 50, 70)
-    lbl.TextSize = 12
+    lbl.TextColor3 = Color3.fromRGB(80, 40, 55)
+    lbl.TextSize = 10
     lbl.Font = Enum.Font.GothamMedium
     local active = false
     bg.MouseButton1Click:Connect(function()
         active = not active
         bg.BackgroundColor3 = active and THEME_COLOR or Color3.fromRGB(220, 200, 210)
-        dot:TweenPosition(active and UDim2.new(1, -18, 0.5, -7) or UDim2.new(0, 2, 0.5, -7), "Out", "Quad", 0.1, true)
+        dot:TweenPosition(active and UDim2.new(1, -13, 0.5, -5.5) or UDim2.new(0, 2, 0.5, -5.5), "Out", "Quad", 0.1, true)
         if callback then callback(active) end
     end)
 end
 
-local y = 10
-MakeToggle("🌈 Bật ESP", y, function(v) SETTINGS.ESP = v end); y=y+25
-MakeToggle("📛 Hiện Tên", y, function(v) SETTINGS.ESP_Name = v end); y=y+25
-MakeToggle("🗃️ Hiện Khung", y, function(v) SETTINGS.ESP_Box = v end); y=y+25
-MakeToggle("📏 Hiện Khoảng Cách", y, function(v) SETTINGS.ESP_Distance = v end); y=y+25
-MakeToggle("❤️ Hiện Máu", y, function(v) SETTINGS.ESP_Health = v end); y=y+25
-MakeToggle("📐 Line dọc (trên xuống)", y, function(v) SETTINGS.ESP_Line = v end); y=y+25
-MakeToggle("🎯 Silent Aim (đạn tự bay)", y, function(v) SETTINGS.SilentAim = v end); y=y+25
-MakeToggle("🎯 Snap khi bắn (xoay cam)", y, function(v) SETTINGS.SnapOnFire = v end); y=y+25
-MakeToggle("🔫 Tự động bắn (30/s)", y, function(v) SETTINGS.AutoShoot = v end); y=y+25
-MakeToggle("🔘 Vòng FOV", y, function(v) SETTINGS.ShowFOV = v end); y=y+25
-MakeToggle("🚫 No Recoil", y, function(v) SETTINGS.NoRecoil = v end); y=y+25
-MakeToggle("🎯 No Spread", y, function(v) SETTINGS.NoSpread = v end); y=y+25
-MakeToggle("⚡ Tăng tốc chạy/nhảy", y, function(v) SETTINGS.Speed = v end); y=y+25
-MakeToggle("🕊️ Fly Mode", y, function(v) SETTINGS.Fly = v end); y=y+30
+local y = 5
+MakeToggle("ESP", y, function(v) SETTINGS.ESP = v end); y=y+20
+MakeToggle("Tên", y, function(v) SETTINGS.ESP_Name = v end); y=y+20
+MakeToggle("Khung", y, function(v) SETTINGS.ESP_Box = v end); y=y+20
+MakeToggle("Khoảng cách", y, function(v) SETTINGS.ESP_Distance = v end); y=y+20
+MakeToggle("Máu", y, function(v) SETTINGS.ESP_Health = v end); y=y+20
+MakeToggle("Line dọc", y, function(v) SETTINGS.ESP_Line = v end); y=y+20
+MakeToggle("Silent Aim", y, function(v) SETTINGS.SilentAim = v end); y=y+20
+MakeToggle("Snap khi bắn", y, function(v) SETTINGS.SnapOnFire = v end); y=y+20
+MakeToggle("Auto Shoot (30/s)", y, function(v) SETTINGS.AutoShoot = v end); y=y+20
+MakeToggle("Vòng FOV", y, function(v) SETTINGS.ShowFOV = v end); y=y+20
+MakeToggle("No Recoil", y, function(v) SETTINGS.NoRecoil = v end); y=y+20
+MakeToggle("No Spread", y, function(v) SETTINGS.NoSpread = v end); y=y+20
+MakeToggle("Speed/Jump", y, function(v) SETTINGS.Speed = v end); y=y+20
+MakeToggle("Fly Mode", y, function(v) SETTINGS.Fly = v end); y=y+25
 
 -- Slider FOV
 local FOVLabel = Instance.new("TextLabel", ContentFrame)
-FOVLabel.Position = UDim2.new(0, 10, 0, y)
-FOVLabel.Size = UDim2.new(0, 150, 0, 18)
+FOVLabel.Position = UDim2.new(0, 8, 0, y)
+FOVLabel.Size = UDim2.new(0, 100, 0, 15)
 FOVLabel.BackgroundTransparency = 1
 FOVLabel.Text = "FOV: " .. FOV_RADIUS
 FOVLabel.TextColor3 = THEME_COLOR
-FOVLabel.TextSize = 12
+FOVLabel.TextSize = 10
 FOVLabel.Font = Enum.Font.GothamBold
-y = y + 20
+y = y + 15
 
 local SliderBg = Instance.new("Frame", ContentFrame)
 SliderBg.BackgroundColor3 = Color3.fromRGB(220, 200, 210)
-SliderBg.Position = UDim2.new(0, 10, 0, y)
-SliderBg.Size = UDim2.new(1, -20, 0, 4)
+SliderBg.Position = UDim2.new(0, 8, 0, y)
+SliderBg.Size = UDim2.new(1, -16, 0, 3)
 local SliderFill = Instance.new("Frame", SliderBg)
 SliderFill.BackgroundColor3 = THEME_COLOR
 SliderFill.Size = UDim2.new(FOV_RADIUS/500, 0, 1, 0)
 local SliderBall = Instance.new("TextButton", SliderFill)
-SliderBall.Size = UDim2.new(0, 12, 0, 12)
-SliderBall.Position = UDim2.new(1, -6, 0.5, -6)
+SliderBall.Size = UDim2.new(0, 10, 0, 10)
+SliderBall.Position = UDim2.new(1, -5, 0.5, -5)
 SliderBall.Text = ""
 SliderBall.BackgroundColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", SliderBall).CornerRadius = UDim.new(1, 0)
@@ -268,31 +257,30 @@ SliderBg.InputBegan:Connect(function(input)
         SetFOV(input.Position.X)
     end
 end)
-y = y + 30
+y = y + 20
 
--- Liên hệ admin
 local ContactFrame = Instance.new("Frame", ContentFrame)
-ContactFrame.Position = UDim2.new(0, 10, 0, y)
-ContactFrame.Size = UDim2.new(1, -20, 0, 34)
+ContactFrame.Position = UDim2.new(0, 8, 0, y)
+ContactFrame.Size = UDim2.new(1, -16, 0, 28)
 ContactFrame.BackgroundColor3 = Color3.fromRGB(255, 230, 240)
-Instance.new("UICorner", ContactFrame).CornerRadius = UDim.new(0, 20)
+Instance.new("UICorner", ContactFrame).CornerRadius = UDim.new(0, 15)
 local ContactLabel = Instance.new("TextLabel", ContactFrame)
-ContactLabel.Text = "💌 Admin: @haidwng12 💌"
+ContactLabel.Text = "Admin: @haidwng12"
 ContactLabel.Size = UDim2.new(1,0,1,0)
 ContactLabel.BackgroundTransparency = 1
 ContactLabel.TextColor3 = THEME_COLOR
-ContactLabel.TextSize = 12
+ContactLabel.TextSize = 9
 ContactLabel.Font = Enum.Font.GothamBold
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, y + 50)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, y + 40)
 
--- ========== TOGGLE MENU BẰNG LOGO ==========
+-- Toggle menu bằng logo
 Logo.MouseButton1Click:Connect(function()
     menuVisible = not menuVisible
     MainFrame.Visible = menuVisible
     Logo.BackgroundTransparency = menuVisible and 0.3 or 0.7
 end)
 
--- ========== ESP ENGINE (rút gọn nhưng đủ) ==========
+-- ========== ESP ENGINE (rút gọn) ==========
 local function safeRemove(d)
     if d and d.Remove then pcall(d.Remove, d) end
 end
@@ -301,7 +289,7 @@ local function AddESP(plr)
     if plr == LocalPlayer then return end
     local box = Drawing.new("Square"); box.Thickness = 1; box.Filled = false
     local line = Drawing.new("Line"); line.Thickness = 1
-    local name = Drawing.new("Text"); name.Size = 12; name.Center = true; name.Outline = true
+    local name = Drawing.new("Text"); name.Size = 10; name.Center = true; name.Outline = true
     local hbg = Drawing.new("Square"); hbg.Thickness = 1; hbg.Filled = true; hbg.Color = Color3.new(0,0,0); hbg.Transparency = 0.5
     local hfill = Drawing.new("Square"); hfill.Thickness = 0; hfill.Filled = true
     local conn = RunService.RenderStepped:Connect(function()
@@ -334,11 +322,11 @@ local function AddESP(plr)
             else line.Visible = false end
             if SETTINGS.ESP_Name then
                 local txt = plr.Name .. (SETTINGS.ESP_Distance and (" ["..math.floor(dist).."m]" or ""))
-                name.Text = txt; name.Position = Vector2.new(pos.X, topY - 12); name.Color = Color3.new(1,1,1); name.Visible = true
+                name.Text = txt; name.Position = Vector2.new(pos.X, topY - 10); name.Color = Color3.new(1,1,1); name.Visible = true
             else name.Visible = false end
             if SETTINGS.ESP_Health then
                 local ratio = math.clamp(hum.Health/hum.MaxHealth,0,1)
-                local bw = 3; local bh = h
+                local bw = 2; local bh = h
                 local bx = leftX - bw - 2; local by = topY
                 hbg.Size = Vector2.new(bw, bh); hbg.Position = Vector2.new(bx, by); hbg.Visible = true
                 local fh = bh * ratio
@@ -566,10 +554,10 @@ local collapsed = false
 CollapseBtn.MouseButton1Click:Connect(function()
     collapsed = not collapsed
     CollapseBtn.Text = collapsed and "+" or "−"
-    MainFrame:TweenSize(collapsed and UDim2.new(0, 320, 0, 40) or UDim2.new(0, 320, 0, 400), "Out", "Quad", 0.2, true)
+    MainFrame:TweenSize(collapsed and UDim2.new(0, 280, 0, 35) or UDim2.new(0, 280, 0, 350), "Out", "Quad", 0.2, true)
     VersionFrame.Visible = not collapsed
     ContentFrame.Visible = not collapsed
 end)
 
 MainFrame.Visible = true
-print("✅ Đã load. Click logo 🌸 để ẩn/hiện menu. Không bị tràn màn.")
+print("🌸 Mobile version ready. Logo bên trái, menu nhỏ.")
