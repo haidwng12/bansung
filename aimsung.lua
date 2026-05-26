@@ -1,6 +1,7 @@
 --[[
-    HaiDwnG Hub - Mobile Optimized (280x350)
-    Logo bên trái, menu thu nhỏ, đầy đủ chức năng.
+    HaiDwnG Hub - Aim Lock 100% (liên tục bám) + FOV 450 Touch
+    Chức năng: ESP, Silent Aim, Snap khi bắn, Auto Shoot, No Recoil, No Spread, Fast Reload, Speed, Fly
+    Logo bên trái, menu thu nhỏ, FOV slider dùng tay.
 ]]
 
 local Players = game:GetService("Players")
@@ -15,11 +16,14 @@ local VirtualInput = game:GetService("VirtualInput")
 local SETTINGS = {
     ESP = false, ESP_Name = false, ESP_Box = false, ESP_Line = false,
     ESP_Distance = false, ESP_Health = false,
-    SilentAim = false, SnapOnFire = false, AutoShoot = false,
-    ShowFOV = false, NoRecoil = false, NoSpread = false,
-    FastReload = false, Speed = false, Fly = false
+    SilentAim = false, SnapOnFire = false, AimLock = false,
+    AutoShoot = false, ShowFOV = false,
+    NoRecoil = false, NoSpread = false, FastReload = false,
+    Speed = false, Fly = false
 }
-local FOV_RADIUS = 150
+local FOV_RADIUS = 200
+local MIN_FOV = 50
+local MAX_FOV = 450
 local AIM_TARGET_PART = "UpperTorso"
 local MAX_DISTANCE = 400
 local THEME_COLOR = Color3.fromRGB(255, 133, 170)
@@ -36,7 +40,7 @@ FOVCircle.Visible = false
 FOVCircle.Color = THEME_COLOR
 FOVCircle.Transparency = 0.5
 
--- Logo nhỏ bên trái
+-- Logo bên trái
 local Logo = Instance.new("TextButton")
 Logo.Name = "HaiDwnG_Logo"
 Logo.Parent = CoreGui
@@ -57,7 +61,7 @@ LogoStroke.Thickness = 1
 local logoDragging = false
 local logoDragStart, logoStartPos
 Logo.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         logoDragging = true
         logoDragStart = input.Position
         logoStartPos = Logo.Position
@@ -66,14 +70,16 @@ Logo.InputBegan:Connect(function(input)
         end)
     end
 end)
-UserInputService.InputChanged:Connect(function(input)
-    if logoDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+local function onLogoMove(input)
+    if logoDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - logoDragStart
         Logo.Position = UDim2.new(logoStartPos.X.Scale, logoStartPos.X.Offset + delta.X, logoStartPos.Y.Scale, logoStartPos.Y.Offset + delta.Y)
     end
-end)
+end
+UserInputService.InputChanged:Connect(onLogoMove)
+UserInputService.TouchMoved:Connect(onLogoMove)
 
--- Menu chính thu nhỏ
+-- Menu chính
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "HaiDwnGHub"
 ScreenGui.Parent = CoreGui
@@ -96,8 +102,8 @@ strokeMain.Color = THEME_COLOR
 local TitleBtn = Instance.new("TextButton", MainFrame)
 TitleBtn.BackgroundTransparency = 1
 TitleBtn.Size = UDim2.new(1, 0, 0, 35)
-TitleBtn.Text = "🌸 HaiDwnG Hub"
-TitleBtn.TextSize = 14
+TitleBtn.Text = "🌸 HaiDwnG Hub (Lock 100%)"
+TitleBtn.TextSize = 12
 TitleBtn.Font = Enum.Font.GothamBlack
 local hue = 0
 RunService.RenderStepped:Connect(function(dt)
@@ -110,7 +116,7 @@ end)
 local dragging = false
 local dragStart, startPos
 TitleBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = MainFrame.Position
@@ -119,12 +125,14 @@ TitleBtn.InputBegan:Connect(function(input)
         end)
     end
 end)
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+local function onMenuMove(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
-end)
+end
+UserInputService.InputChanged:Connect(onMenuMove)
+UserInputService.TouchMoved:Connect(onMenuMove)
 
 -- Nút thu gọn
 local CollapseBtn = Instance.new("TextButton", MainFrame)
@@ -142,7 +150,7 @@ VersionFrame.Position = UDim2.new(0, 10, 0, 40)
 VersionFrame.Size = UDim2.new(1, -20, 0, 18)
 Instance.new("UICorner", VersionFrame).CornerRadius = UDim.new(0, 20)
 local VersionText = Instance.new("TextLabel", VersionFrame)
-VersionText.Text = "✨ Mobile | Silent + Snap ✨"
+VersionText.Text = "✨ Lock 100% | FOV 450 ✨"
 VersionText.BackgroundTransparency = 1
 VersionText.Size = UDim2.new(1,0,1,0)
 VersionText.TextColor3 = Color3.fromRGB(255, 120, 150)
@@ -154,9 +162,10 @@ ContentFrame.BackgroundColor3 = Color3.fromRGB(255, 250, 252)
 ContentFrame.Position = UDim2.new(0, 8, 0, 62)
 ContentFrame.Size = UDim2.new(1, -16, 1, -80)
 ContentFrame.ScrollBarThickness = 2
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 520)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 580)
 Instance.new("UICorner", ContentFrame).CornerRadius = UDim.new(0, 10)
 
+-- Hàm tạo toggle
 local function MakeToggle(label, yPos, callback)
     local bg = Instance.new("TextButton", ContentFrame)
     bg.Size = UDim2.new(0, 30, 0, 15)
@@ -195,6 +204,7 @@ MakeToggle("Máu", y, function(v) SETTINGS.ESP_Health = v end); y=y+20
 MakeToggle("Line dọc", y, function(v) SETTINGS.ESP_Line = v end); y=y+20
 MakeToggle("Silent Aim", y, function(v) SETTINGS.SilentAim = v end); y=y+20
 MakeToggle("Snap khi bắn", y, function(v) SETTINGS.SnapOnFire = v end); y=y+20
+MakeToggle("🔒 Aim Lock 100% (bám cứng)", y, function(v) SETTINGS.AimLock = v end); y=y+20
 MakeToggle("Auto Shoot (30/s)", y, function(v) SETTINGS.AutoShoot = v end); y=y+20
 MakeToggle("Vòng FOV", y, function(v) SETTINGS.ShowFOV = v end); y=y+20
 MakeToggle("No Recoil", y, function(v) SETTINGS.NoRecoil = v end); y=y+20
@@ -202,7 +212,7 @@ MakeToggle("No Spread", y, function(v) SETTINGS.NoSpread = v end); y=y+20
 MakeToggle("Speed/Jump", y, function(v) SETTINGS.Speed = v end); y=y+20
 MakeToggle("Fly Mode", y, function(v) SETTINGS.Fly = v end); y=y+25
 
--- Slider FOV
+-- Slider FOV dùng touch
 local FOVLabel = Instance.new("TextLabel", ContentFrame)
 FOVLabel.Position = UDim2.new(0, 8, 0, y)
 FOVLabel.Size = UDim2.new(0, 100, 0, 15)
@@ -216,47 +226,57 @@ y = y + 15
 local SliderBg = Instance.new("Frame", ContentFrame)
 SliderBg.BackgroundColor3 = Color3.fromRGB(220, 200, 210)
 SliderBg.Position = UDim2.new(0, 8, 0, y)
-SliderBg.Size = UDim2.new(1, -16, 0, 3)
+SliderBg.Size = UDim2.new(1, -16, 0, 4)
 local SliderFill = Instance.new("Frame", SliderBg)
 SliderFill.BackgroundColor3 = THEME_COLOR
-SliderFill.Size = UDim2.new(FOV_RADIUS/500, 0, 1, 0)
+SliderFill.Size = UDim2.new((FOV_RADIUS - MIN_FOV) / (MAX_FOV - MIN_FOV), 0, 1, 0)
 local SliderBall = Instance.new("TextButton", SliderFill)
-SliderBall.Size = UDim2.new(0, 10, 0, 10)
-SliderBall.Position = UDim2.new(1, -5, 0.5, -5)
+SliderBall.Size = UDim2.new(0, 12, 0, 12)
+SliderBall.Position = UDim2.new(1, -6, 0.5, -6)
 SliderBall.Text = ""
 SliderBall.BackgroundColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", SliderBall).CornerRadius = UDim.new(1, 0)
 
-local function SetFOV(mouseX)
-    local rel = math.clamp((mouseX - SliderBg.AbsolutePosition.X) / SliderBg.AbsoluteSize.X, 0, 1)
-    FOV_RADIUS = math.floor(rel * 400 + 50)
-    SliderFill.Size = UDim2.new(rel, 0, 1, 0)
+local function updateFOV(value)
+    FOV_RADIUS = math.clamp(value, MIN_FOV, MAX_FOV)
     FOVLabel.Text = "FOV: " .. FOV_RADIUS
+    local percent = (FOV_RADIUS - MIN_FOV) / (MAX_FOV - MIN_FOV)
+    SliderFill.Size = UDim2.new(percent, 0, 1, 0)
     FOVCircle.Radius = FOV_RADIUS
 end
 
-local sliderMoving = false
-SliderBall.MouseButton1Down:Connect(function()
-    sliderMoving = true
-    local moveCon, endCon
-    moveCon = UserInputService.InputChanged:Connect(function(input)
-        if sliderMoving and input.UserInputType == Enum.UserInputType.MouseMovement then
-            SetFOV(input.Position.X)
-        end
-    end)
-    endCon = UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            sliderMoving = false
-            moveCon:Disconnect()
-            endCon:Disconnect()
-        end
-    end)
-end)
-SliderBg.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        SetFOV(input.Position.X)
+local function setFOVfromPos(inputPos)
+    local trackPos = SliderBg.AbsolutePosition
+    local trackSize = SliderBg.AbsoluteSize
+    local rel = (inputPos.X - trackPos.X) / trackSize.X
+    rel = math.clamp(rel, 0, 1)
+    local newVal = MIN_FOV + rel * (MAX_FOV - MIN_FOV)
+    updateFOV(newVal)
+end
+
+local sliderActive = false
+SliderBall.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliderActive = true
+        setFOVfromPos(input.Position)
     end
 end)
+UserInputService.InputChanged:Connect(function(input)
+    if sliderActive and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        setFOVfromPos(input.Position)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliderActive = false
+    end
+end)
+SliderBg.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        setFOVfromPos(input.Position)
+    end
+end)
+
 y = y + 20
 
 local ContactFrame = Instance.new("Frame", ContentFrame)
@@ -273,14 +293,14 @@ ContactLabel.TextSize = 9
 ContactLabel.Font = Enum.Font.GothamBold
 ContentFrame.CanvasSize = UDim2.new(0, 0, 0, y + 40)
 
--- Toggle menu bằng logo
+-- Toggle menu khi click logo
 Logo.MouseButton1Click:Connect(function()
     menuVisible = not menuVisible
     MainFrame.Visible = menuVisible
     Logo.BackgroundTransparency = menuVisible and 0.3 or 0.7
 end)
 
--- ========== ESP ENGINE (rút gọn) ==========
+-- ======================== ESP ========================
 local function safeRemove(d)
     if d and d.Remove then pcall(d.Remove, d) end
 end
@@ -325,7 +345,7 @@ local function AddESP(plr)
                 name.Text = txt; name.Position = Vector2.new(pos.X, topY - 10); name.Color = Color3.new(1,1,1); name.Visible = true
             else name.Visible = false end
             if SETTINGS.ESP_Health then
-                local ratio = math.clamp(hum.Health/hum.MaxHealth,0,1)
+                local ratio = math.clamp(hum.Health/hum.MaxHealth, 0, 1)
                 local bw = 2; local bh = h
                 local bx = leftX - bw - 2; local by = topY
                 hbg.Size = Vector2.new(bw, bh); hbg.Position = Vector2.new(bx, by); hbg.Visible = true
@@ -347,7 +367,7 @@ Players.PlayerRemoving:Connect(function(p)
     end
 end)
 
--- ========== WEAPON MODS ==========
+-- ======================== WEAPON MODS ========================
 local function applyMods()
     if not (SETTINGS.NoRecoil or SETTINGS.NoSpread or SETTINGS.FastReload) then return end
     local char = LocalPlayer.Character
@@ -372,7 +392,7 @@ local function applyMods()
 end
 RunService.RenderStepped:Connect(applyMods)
 
--- ========== SPEED / FLY ==========
+-- ======================== SPEED / FLY ========================
 local flying = false
 local bv, bg
 RunService.RenderStepped:Connect(function()
@@ -431,7 +451,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ========== AIM HELPERS ==========
+-- ======================== AIM HELPERS ========================
 local function IsTargetVisible(part)
     if not part then return false end
     local origin = Camera.CFrame.Position
@@ -462,7 +482,21 @@ local function getBestTarget(skipVis)
     return best
 end
 
--- Snap on fire
+-- ======================== AIM LOCK 100% (CHẶT) ========================
+-- Chạy liên tục, bám cứng vào mục tiêu gần nhất trong FOV, bỏ qua tầm nhìn.
+RunService.RenderStepped:Connect(function()
+    if SETTINGS.AimLock then
+        local target = getBestTarget(true) -- true = bỏ qua visibility, vẫn bám cả sau lưng
+        if target and target.Character then
+            local targetPart = target.Character:FindFirstChild(AIM_TARGET_PART)
+            if targetPart then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+            end
+        end
+    end
+end)
+
+-- ======================== SNAP ON FIRE ========================
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.UserInputType == Enum.UserInputType.MouseButton1 and SETTINGS.SnapOnFire then
@@ -476,8 +510,8 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- Silent Aim hook
-local oldNamecall, hooked = nil, false
+-- ======================== SILENT AIM HOOK ========================
+local hooked = false
 local function hookSilent()
     if hooked then return end
     local mt = getrawmetatable(game)
@@ -516,7 +550,7 @@ task.spawn(function()
     end
 end)
 
--- Auto shoot
+-- ======================== AUTO SHOOT ========================
 local lastShoot = 0
 local function Shoot()
     pcall(function()
@@ -549,7 +583,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Thu gọn menu
+-- ======================== THU GỌN MENU ========================
 local collapsed = false
 CollapseBtn.MouseButton1Click:Connect(function()
     collapsed = not collapsed
@@ -560,4 +594,4 @@ CollapseBtn.MouseButton1Click:Connect(function()
 end)
 
 MainFrame.Visible = true
-print("🌸 Mobile version ready. Logo bên trái, menu nhỏ.")
+print("✅ Đã load: Aim Lock 100% | FOV 450 touch | Logo bên trái")
