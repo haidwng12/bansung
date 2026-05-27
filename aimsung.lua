@@ -1,5 +1,5 @@
 --[[
-    HAI DWNG - ARSENAL ULTIMATE (Giao diện đẹp, tele nhìn xuống, auto farm)
+    HAI DWNG - ARSENAL ULTIMATE (FIX CHỮ ĐÈ, FULL CHỨC NĂNG)
 ]]
 
 local Players = game:GetService("Players")
@@ -32,7 +32,7 @@ local spinSpeed = 360
 local lastSpinTime = tick()
 local lastSayTime = 0
 
--- Màu sắc giao diện
+-- Màu
 local THEME = Color3.fromRGB(255, 80, 120)
 local BG = Color3.fromRGB(15, 15, 25)
 local ACCENT = Color3.fromRGB(0, 255, 200)
@@ -45,25 +45,25 @@ FOVCircle.Visible = false
 FOVCircle.Color = ACCENT
 FOVCircle.Transparency = 0.6
 
--- ========== TẠO GUI ĐẸP (giống HTML demo) ==========
+-- ========== TẠO GUI VỚI UIListLayout ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "HaiDwnG_Ultimate"
 gui.Parent = CoreGui
 gui.ResetOnSpawn = false
 
 local menu = Instance.new("Frame")
-menu.Size = UDim2.new(0, 340, 0, 540)
-menu.Position = UDim2.new(0.5, -170, 0.5, -270)
+menu.Size = UDim2.new(0, 340, 0, 520)
+menu.Position = UDim2.new(0.5, -170, 0.5, -260)
 menu.BackgroundColor3 = Color3.fromRGB(12, 12, 22)
 menu.BackgroundTransparency = 0.35
 menu.BorderSizePixel = 0
 Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 28)
 local menuStroke = Instance.new("UIStroke", menu)
-menuStroke.Color = Color3.fromRGB(255, 80, 120)
+menuStroke.Color = THEME
 menuStroke.Thickness = 1.5
 menu.Parent = gui
 
--- Header (kéo thả)
+-- Header
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1, 0, 0, 48)
 header.BackgroundColor3 = Color3.fromRGB(26, 26, 46)
@@ -76,7 +76,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0.7, 0, 1, 0)
 title.Position = UDim2.new(0, 16, 0, 0)
 title.Text = "🌀 HAI DWNG | ULTIMATE"
-title.TextColor3 = Color3.fromRGB(255, 80, 120)
+title.TextColor3 = THEME
 title.TextSize = 16
 title.Font = Enum.Font.GothamBold
 title.BackgroundTransparency = 1
@@ -93,26 +93,30 @@ collapseBtn.BackgroundColor3 = Color3.fromRGB(42, 42, 60)
 Instance.new("UICorner", collapseBtn).CornerRadius = UDim.new(1, 0)
 collapseBtn.Parent = header
 
--- Nội dung cuộn
+-- Scroll
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -20, 1, -60)
-scroll.Position = UDim2.new(0, 10, 0, 55)
+scroll.Size = UDim2.new(1, -20, 1, -68)
+scroll.Position = UDim2.new(0, 10, 0, 56)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 4
 scroll.ScrollBarImageColor3 = THEME
-scroll.CanvasSize = UDim2.new(0, 0, 0, 800)
 scroll.Parent = menu
 
 local content = Instance.new("Frame")
-content.Size = UDim2.new(1, 0, 0, 800)
+content.Size = UDim2.new(1, 0, 0, 0)
 content.BackgroundTransparency = 1
 content.Parent = scroll
 
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 12)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = content
+
 -- Hàm tạo section
-local function addSection(titleText, y)
+local function createSection(titleText)
     local section = Instance.new("Frame")
     section.Size = UDim2.new(1, 0, 0, 0)
-    section.Position = UDim2.new(0, 0, 0, y)
     section.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
     section.BackgroundTransparency = 0.6
     section.BorderSizePixel = 0
@@ -120,23 +124,28 @@ local function addSection(titleText, y)
     section.Parent = content
 
     local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, -20, 0, 24)
-    titleLabel.Position = UDim2.new(0, 10, 0, 6)
+    titleLabel.Size = UDim2.new(1, -20, 0, 28)
+    titleLabel.Position = UDim2.new(0, 10, 0, 8)
     titleLabel.Text = titleText
     titleLabel.TextColor3 = Color3.fromRGB(255, 176, 192)
-    titleLabel.TextSize = 12
+    titleLabel.TextSize = 13
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.BackgroundTransparency = 1
     titleLabel.Parent = section
 
-    return section, titleLabel
+    local innerLayout = Instance.new("UIListLayout")
+    innerLayout.Padding = UDim.new(0, 8)
+    innerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    innerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    innerLayout.Parent = section
+
+    return section, innerLayout
 end
 
--- Hàm tạo toggle trong section
-local function addToggle(section, label, emoji, callback, default, yOffset)
+-- Toggle
+local function addToggle(section, label, emoji, callback, default)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -20, 0, 32)
-    frame.Position = UDim2.new(0, 10, 0, yOffset)
     frame.BackgroundTransparency = 1
     frame.Parent = section
 
@@ -150,8 +159,8 @@ local function addToggle(section, label, emoji, callback, default, yOffset)
     lbl.Parent = frame
 
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 46, 0, 24)
-    btn.Position = UDim2.new(1, -56, 0, 4)
+    btn.Size = UDim2.new(0, 50, 0, 26)
+    btn.Position = UDim2.new(1, -60, 0, 3)
     btn.BackgroundColor3 = default and THEME or Color3.fromRGB(58, 58, 78)
     btn.Text = default and "ON" or "OFF"
     btn.TextColor3 = Color3.new(1,1,1)
@@ -167,19 +176,17 @@ local function addToggle(section, label, emoji, callback, default, yOffset)
         btn.Text = active and "ON" or "OFF"
         callback(active)
     end)
-    return btn
 end
 
--- Hàm tạo slider
-local function addSlider(section, label, minVal, maxVal, getVal, setVal, yOffset)
+-- Slider
+local function addSlider(section, label, minVal, maxVal, getVal, setVal)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -20, 0, 50)
-    frame.Position = UDim2.new(0, 10, 0, yOffset)
     frame.BackgroundTransparency = 1
     frame.Parent = section
 
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, 0, 0, 18)
+    lbl.Size = UDim2.new(1, 0, 0, 20)
     lbl.Text = label .. ": " .. tostring(getVal())
     lbl.TextColor3 = Color3.new(1,1,1)
     lbl.TextSize = 11
@@ -188,7 +195,7 @@ local function addSlider(section, label, minVal, maxVal, getVal, setVal, yOffset
 
     local slider = Instance.new("Frame")
     slider.Size = UDim2.new(1, 0, 0, 4)
-    slider.Position = UDim2.new(0, 0, 0, 22)
+    slider.Position = UDim2.new(0, 0, 0, 24)
     slider.BackgroundColor3 = Color3.fromRGB(58, 58, 78)
     Instance.new("UICorner", slider).CornerRadius = UDim.new(1, 0)
     slider.Parent = frame
@@ -231,53 +238,62 @@ local function addSlider(section, label, minVal, maxVal, getVal, setVal, yOffset
     end)
 end
 
--- Xây dựng menu
-local y = 0
-local espSec, _ = addSection("👁️ ESP VISUALS", y); y = y + 100
-addToggle(espSec, "Master ESP", "🔘", function(v) SETTINGS.ESP = v end, false, 40)
-addToggle(espSec, "Name", "🏷️", function(v) SETTINGS.ESP_Name = v end, true, 75)
-addToggle(espSec, "Box", "📦", function(v) SETTINGS.ESP_Box = v end, true, 110)
-addToggle(espSec, "Health", "❤️", function(v) SETTINGS.ESP_Health = v end, true, 145)
-addToggle(espSec, "Line dọc", "〰️", function(v) SETTINGS.ESP_Line = v end, false, 180)
+-- Tạo các section (đã rút gọn để tránh quá dài, nhưng đủ)
+local espSec, _ = createSection("👁️ ESP VISUALS")
+addToggle(espSec, "Master ESP", "🔘", function(v) SETTINGS.ESP = v end, false)
+addToggle(espSec, "Name", "🏷️", function(v) SETTINGS.ESP_Name = v end, true)
+addToggle(espSec, "Box", "📦", function(v) SETTINGS.ESP_Box = v end, true)
+addToggle(espSec, "Health", "❤️", function(v) SETTINGS.ESP_Health = v end, true)
+addToggle(espSec, "Line dọc", "〰️", function(v) SETTINGS.ESP_Line = v end, false)
 
-local aimSec, _ = addSection("🎯 AIMBOT / SILENT", y); y = y + 100
-addToggle(aimSec, "Silent Aim (visible)", "🔮", function(v) SETTINGS.SilentAim = v end, false, 40)
-addToggle(aimSec, "Magic Bullet", "✨", function(v) SETTINGS.MagicBullet = v end, false, 75)
-addToggle(aimSec, "Aimbot (lock)", "🎯", function(v) SETTINGS.AimLock = v end, false, 110)
-addToggle(aimSec, "Auto Tap", "⚡", function(v) SETTINGS.AutoTap = v end, false, 145)
-addToggle(aimSec, "Auto Knife", "🔪", function(v) SETTINGS.AutoKnife = v end, false, 180)
+local aimSec, _ = createSection("🎯 AIMBOT / SILENT")
+addToggle(aimSec, "Silent Aim (visible)", "🔮", function(v) SETTINGS.SilentAim = v end, false)
+addToggle(aimSec, "Magic Bullet", "✨", function(v) SETTINGS.MagicBullet = v end, false)
+addToggle(aimSec, "Aimbot (lock)", "🎯", function(v) SETTINGS.AimLock = v end, false)
+addToggle(aimSec, "Auto Tap", "⚡", function(v) SETTINGS.AutoTap = v end, false)
+addToggle(aimSec, "Auto Knife", "🔪", function(v) SETTINGS.AutoKnife = v end, false)
 
-local farmSec, _ = addSection("⚙️ AUTO FARM / KILL", y); y = y + 100
-addToggle(farmSec, "Kill All (once)", "💀", function(v) SETTINGS.KillAll = v end, false, 40)
-addToggle(farmSec, "Auto Farm (treo máy)", "⚙️", function(v) SETTINGS.AutoFarm = v end, false, 75)
-addToggle(farmSec, "Spin 360°", "🌀", function(v) SETTINGS.Spin = v end, false, 110)
-addToggle(farmSec, "Auto Say (@haidwng12)", "💬", function(v) SETTINGS.AutoSay = v end, false, 145)
-addToggle(farmSec, "Infinite Ammo", "♾️", function(v) SETTINGS.InfAmmo = v end, false, 180)
+local farmSec, _ = createSection("⚙️ AUTO FARM / KILL")
+addToggle(farmSec, "Kill All (once)", "💀", function(v) SETTINGS.KillAll = v end, false)
+addToggle(farmSec, "Auto Farm (treo máy)", "⚙️", function(v) SETTINGS.AutoFarm = v end, false)
+addToggle(farmSec, "Spin 360°", "🌀", function(v) SETTINGS.Spin = v end, false)
+addToggle(farmSec, "Auto Say (@haidwng12)", "💬", function(v) SETTINGS.AutoSay = v end, false)
+addToggle(farmSec, "Infinite Ammo", "♾️", function(v) SETTINGS.InfAmmo = v end, false)
 
-local moveSec, _ = addSection("🦅 MOVEMENT & OTHER", y); y = y + 100
-addToggle(moveSec, "Speed/Jump", "🏃", function(v) SETTINGS.Speed = v end, false, 40)
-addToggle(moveSec, "Fly", "🦅", function(v) SETTINGS.Fly = v end, false, 75)
-addToggle(moveSec, "Noclip", "🌀", function(v) SETTINGS.Noclip = v end, false, 110)
-addToggle(moveSec, "Hitbox Expand", "📦", function(v) SETTINGS.HitboxExpand = v end, false, 145)
-addToggle(moveSec, "Team Check", "🚫", function(v) SETTINGS.TeamCheck = v end, true, 180)
+local moveSec, _ = createSection("🦅 MOVEMENT & OTHER")
+addToggle(moveSec, "Speed/Jump", "🏃", function(v) SETTINGS.Speed = v end, false)
+addToggle(moveSec, "Fly", "🦅", function(v) SETTINGS.Fly = v end, false)
+addToggle(moveSec, "Noclip", "🌀", function(v) SETTINGS.Noclip = v end, false)
+addToggle(moveSec, "Hitbox Expand", "📦", function(v) SETTINGS.HitboxExpand = v end, false)
+addToggle(moveSec, "Team Check", "🚫", function(v) SETTINGS.TeamCheck = v end, true)
 
-local fovSec, _ = addSection("🎯 FOV SETTINGS", y); y = y + 100
-addSlider(fovSec, "FOV Radius", MIN_FOV, MAX_FOV, function() return SETTINGS.FOV end, function(v) SETTINGS.FOV = v; FOVCircle.Radius = v end, 40)
-addToggle(fovSec, "Show FOV Circle", "🌀", function(v) SETTINGS.ShowFOV = v end, false, 90)
+local fovSec, _ = createSection("🎯 FOV SETTINGS")
+addSlider(fovSec, "FOV Radius", MIN_FOV, MAX_FOV, function() return SETTINGS.FOV end, function(v) SETTINGS.FOV = v; FOVCircle.Radius = v end)
+addToggle(fovSec, "Show FOV Circle", "🌀", function(v) SETTINGS.ShowFOV = v end, false)
 
--- Credit
 local credit = Instance.new("TextLabel")
 credit.Size = UDim2.new(1, -20, 0, 30)
-credit.Position = UDim2.new(0, 10, 0, y)
 credit.Text = "🔥 @haidwng12 | TELEGRAM SCRIPT 🔥"
 credit.TextColor3 = THEME
 credit.BackgroundTransparency = 1
-credit.TextSize = 10
+credit.TextSize = 11
 credit.Font = Enum.Font.GothamBold
 credit.Parent = content
-y = y + 40
 
-scroll.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+-- Cập nhật kích thước content
+local function updateCanvas()
+    task.wait(0.1)
+    local totalHeight = 0
+    for _, child in pairs(content:GetChildren()) do
+        if child:IsA("Frame") and child ~= layout then
+            totalHeight = totalHeight + child.AbsoluteSize.Y + 12
+        end
+    end
+    credit.Position = UDim2.new(0, 10, 0, totalHeight)
+    content.Size = UDim2.new(1, 0, 0, totalHeight + 40)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 50)
+end
+task.spawn(updateCanvas)
 
 -- Kéo thả menu
 local dragStart, startPos, dragMenu = nil, nil, false
@@ -296,16 +312,16 @@ UserInputService.TouchMoved:Connect(function(pos)
     end
 end)
 
--- Thu gọn menu
+-- Thu gọn
 local collapsed = false
 collapseBtn.MouseButton1Click:Connect(function()
     collapsed = not collapsed
     collapseBtn.Text = collapsed and "+" or "−"
-    menu:TweenSize(collapsed and UDim2.new(0, 340, 0, 60) or UDim2.new(0, 340, 0, 540), "Out", "Quad", 0.2, true)
+    menu:TweenSize(collapsed and UDim2.new(0, 340, 0, 60) or UDim2.new(0, 340, 0, 520), "Out", "Quad", 0.2, true)
     scroll.Visible = not collapsed
 end)
 
--- ========== LOGIC GAME (giữ nguyên từ bản trước, đã sửa tele nhìn xuống) ==========
+-- ========== LOGIC GAME (giữ nguyên từ bản trước) ==========
 local function isEnemy(p)
     if not SETTINGS.TeamCheck then return true end
     return p.Team ~= LocalPlayer.Team
@@ -413,7 +429,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Auto Tap & Bắn
+-- Auto Tap + shoot
 local lastTap = 0
 local function shoot()
     pcall(function()
@@ -460,7 +476,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Hàm tele + bắn (nhìn xuống đất)
+-- Tele + kill (nhìn xuống)
 local function teleAndKill(target)
     if not target or not target.Character then return end
     local aimPart = getTargetPart(target)
@@ -525,7 +541,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Weapon Mods (No Recoil, No Spread, Fast Reload)
+-- Weapon Mods
 local function applyMods()
     if not (SETTINGS.NoRecoil or SETTINGS.NoSpread or SETTINGS.FastReload) then return end
     local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
@@ -604,7 +620,7 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- Auto Say khi kill
+-- Auto Say
 local function sendChat(msg)
     pcall(function()
         local sayRequest = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest")
@@ -653,7 +669,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ESP (vẽ)
+-- ESP (Drawing)
 local function safeRemove(d) if d and d.Remove then pcall(d.Remove, d) end end
 local espData = {}
 local function AddESP(plr)
@@ -713,4 +729,4 @@ for _, p in pairs(Players:GetPlayers()) do AddESP(p) end
 Players.PlayerAdded:Connect(AddESP)
 Players.PlayerRemoving:Connect(function(p) if espData[p] then for _, d in pairs(espData[p]) do safeRemove(d) end espData[p]=nil end end)
 
-print("✅ Giao diện đẹp đã sẵn sàng. Bật Auto Farm + Team Check để treo máy, Spin 360 cho vui, Auto Say quảng cáo.")
+print("✅ Giao diện đã sửa không bị đè chữ. Bật Auto Farm + Team Check để treo máy. Spin, Auto Say, Inf Ammo đã sẵn sàng.")
