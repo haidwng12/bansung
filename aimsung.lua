@@ -1,5 +1,5 @@
 --[[
-    HAI DWNG - ARSENAL ULTIMATE (Spin 360, Auto Say, Inf Ammo, Giao diện đẹp)
+    HAI DWNG - ARSENAL ULTIMATE (Auto nhìn xuống đất khi tele)
 ]]
 
 local Players = game:GetService("Players")
@@ -9,9 +9,8 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local VirtualInput = game:GetService("VirtualInput")
-local Chat = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents") or game:GetService("Chat")
 
--- CẤU HÌNH
+-- CẤU HÌNH (giữ nguyên)
 local SETTINGS = {
     ESP = false, ESP_Name = true, ESP_Box = true, ESP_Line = false,
     ESP_Distance = false, ESP_Health = true,
@@ -45,7 +44,7 @@ FOVCircle.Transparency = 0.6
 local spinSpeed = 360 -- độ/giây
 local lastSpinTime = tick()
 
--- Logo kéo thả (đẹp hơn)
+-- Logo
 local Logo = Instance.new("TextButton")
 Logo.Name = "HaiDwnG_Logo"
 Logo.Parent = CoreGui
@@ -80,7 +79,7 @@ UserInputService.TouchMoved:Connect(function(pos)
     end
 end)
 
--- GUI menu (đẹp hơn: nền mờ, viền sáng)
+-- GUI menu
 local gui = Instance.new("ScreenGui")
 gui.Name = "HaiDwnG"
 gui.Parent = CoreGui
@@ -122,15 +121,14 @@ scroll.Position = UDim2.new(0, 6, 0, 40)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 3
 scroll.ScrollBarImageColor3 = THEME_COLOR
-scroll.CanvasSize = UDim2.new(0, 0, 0, 800)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 850)
 scroll.Parent = main
 
 local content = Instance.new("Frame")
-content.Size = UDim2.new(1, 0, 0, 800)
+content.Size = UDim2.new(1, 0, 0, 850)
 content.BackgroundTransparency = 1
 content.Parent = scroll
 
--- Toggle đẹp hơn
 local function addToggle(text, y, callback, default)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 28)
@@ -267,8 +265,6 @@ UserInputService.TouchMoved:Connect(function(pos)
     end
 end)
 
--- Thu gọn menu
-local collapsed = false
 collapse.MouseButton1Click:Connect(function()
     collapsed = not collapsed
     collapse.Text = collapsed and "+" or "−"
@@ -281,79 +277,7 @@ Logo.MouseButton1Click:Connect(function()
     Logo.BackgroundTransparency = main.Visible and 0.3 or 0.7
 end)
 
--- ========== LOGIC ==========
--- Hàm chat auto say
-local function sendChat(msg)
-    pcall(function()
-        local args = {["Message"] = msg}
-        game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest"):FireServer(msg, "All")
-    end)
-end
-
--- Auto say khi kill (bắt sự kiện)
-local lastKillTime = 0
-if SETTINGS.AutoSay then
-    -- Lắng nghe sự kiện kill (dùng PlayerAdded hoặc Humanoid.Died)
-    game:GetService("Players").PlayerAdded:Connect(function(p)
-        p.CharacterAdded:Connect(function(char)
-            char:WaitForChild("Humanoid").Died:Connect(function()
-                if SETTINGS.AutoSay and tick() - lastKillTime > 1 then
-                    sendChat("@haidwng12 telegram script")
-                    lastKillTime = tick()
-                end
-            end)
-        end)
-    end)
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            p.CharacterAdded:Connect(function(char)
-                char:WaitForChild("Humanoid").Died:Connect(function()
-                    if SETTINGS.AutoSay and tick() - lastKillTime > 1 then
-                        sendChat("@haidwng12 telegram script")
-                        lastKillTime = tick()
-                    end
-                end)
-            end)
-        end
-    end
-end
-
--- Spin 360°
-RunService.RenderStepped:Connect(function(dt)
-    if SETTINGS.Spin and LocalPlayer.Character then
-        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local now = tick()
-            local delta = math.min(now - lastSpinTime, 0.1)
-            lastSpinTime = now
-            hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(spinSpeed * delta), 0)
-        end
-    else
-        lastSpinTime = tick()
-    end
-end)
-
--- Infinite Ammo (sửa tool)
-local function applyInfiniteAmmo()
-    if not SETTINGS.InfAmmo then return end
-    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
-    if tool then
-        for _, v in pairs(tool:GetDescendants()) do
-            if v:IsA("NumberValue") and (v.Name:lower():match("ammo") or v.Name:lower():match("bullet")) then
-                v.Value = 999
-            end
-        end
-    end
-end
-RunService.RenderStepped:Connect(applyInfiniteAmmo)
-
--- Các hàm cũ (giữ nguyên từ script gốc, nhưng đã có)
--- ... (các hàm isEnemy, isVisible, getTargetPart, getAnyEnemy, getVisibleTargetInFOV, getTargetPos, hook, aimbot, auto tap, auto knife, kill all, auto farm, hitbox, noclip, weapon mods, speed, fly, FOV circle, ESP) ...
--- Vì quá dài, tôi sẽ chỉ giữ phần đã sửa và thêm vào cuối script gốc.
-
--- (Chèn tất cả các hàm logic còn lại từ script gốc tại đây - để tiết kiệm thời gian, tôi sẽ sao chép lại phần logic từ script gốc trong câu trả lời)
-
--- ========== CÁC HÀM LOGIC CŨ (giữ nguyên) ==========
+-- ========== LOGIC CHÍNH (đã sửa tele nhìn xuống) ==========
 local function isEnemy(p)
     if not SETTINGS.TeamCheck then return true end
     return p.Team ~= LocalPlayer.Team
@@ -525,7 +449,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Kill All & Auto Farm (tele lên đầu)
+-- ===== QUAN TRỌNG: HÀM TELE ĐÃ SỬA ĐỂ NHÌN XUỐNG ĐẤT =====
 local function teleAndKill(target)
     if not target or not target.Character then return end
     local aimPart = getTargetPart(target)
@@ -534,9 +458,15 @@ local function teleAndKill(target)
     if not myChar then return end
     local myHrp = myChar:FindFirstChild("HumanoidRootPart")
     if not myHrp then return end
+    
+    -- Tính vị trí đứng trên đầu địch
     local telePos = aimPart.Position + Vector3.new(0, 2.5, 0)
+    -- Xoay nhân vật và camera hướng xuống dưới (vào đầu địch)
     myHrp.CFrame = CFrame.new(telePos, aimPart.Position)
+    -- Ép camera nhìn xuống (dự phòng)
+    Camera.CFrame = CFrame.new(telePos, aimPart.Position)
     task.wait(0.02)
+    -- Bắn 3 phát
     for _ = 1, 3 do
         tapShoot()
         task.wait(0.005)
@@ -594,7 +524,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Weapon Mods (No Recoil, No Spread, Fast Reload)
+-- Weapon Mods
 local function applyMods()
     if not (SETTINGS.NoRecoil or SETTINGS.NoSpread or SETTINGS.FastReload) then return end
     local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
@@ -613,6 +543,68 @@ local function applyMods()
     end
 end
 RunService.RenderStepped:Connect(applyMods)
+
+-- Spin 360°
+RunService.RenderStepped:Connect(function(dt)
+    if SETTINGS.Spin and LocalPlayer.Character then
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local now = tick()
+            local delta = math.min(now - lastSpinTime, 0.1)
+            lastSpinTime = now
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(spinSpeed * delta), 0)
+        end
+    else
+        lastSpinTime = tick()
+    end
+end)
+
+-- Auto Say (khi kill)
+local function sendChat(msg)
+    pcall(function()
+        local sayRequest = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest")
+        if sayRequest then sayRequest:FireServer(msg, "All") end
+    end)
+end
+
+local lastSay = 0
+-- Lắng nghe humanoid.Died của enemy
+local function onEnemyDied()
+    if SETTINGS.AutoSay and tick() - lastSay > 1 then
+        sendChat("@haidwng12 telegram script")
+        lastSay = tick()
+    end
+end
+
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then
+        p.CharacterAdded:Connect(function(char)
+            char:WaitForChild("Humanoid").Died:Connect(onEnemyDied)
+        end)
+        if p.Character then
+            p.Character:WaitForChild("Humanoid").Died:Connect(onEnemyDied)
+        end
+    end
+end
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function(char)
+        char:WaitForChild("Humanoid").Died:Connect(onEnemyDied)
+    end)
+end)
+
+-- Infinite Ammo
+local function infiniteAmmo()
+    if not SETTINGS.InfAmmo then return end
+    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
+    if tool then
+        for _, v in pairs(tool:GetDescendants()) do
+            if v:IsA("NumberValue") and (v.Name:lower():match("ammo") or v.Name:lower():match("bullet")) then
+                v.Value = 999
+            end
+        end
+    end
+end
+RunService.RenderStepped:Connect(infiniteAmmo)
 
 -- Speed & Fly
 local flying = false
@@ -670,7 +662,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ESP (chỉ enemy)
+-- ESP
 local function safeRemove(d) if d and d.Remove then pcall(d.Remove, d) end end
 local espData = {}
 local function AddESP(plr)
@@ -730,4 +722,4 @@ for _, p in pairs(Players:GetPlayers()) do AddESP(p) end
 Players.PlayerAdded:Connect(AddESP)
 Players.PlayerRemoving:Connect(function(p) if espData[p] then for _, d in pairs(espData[p]) do safeRemove(d) end espData[p]=nil end end)
 
-print("✅ Đã thêm Spin 360°, Auto Say (@haidwng12 telegram script), Vô hạn đạn. Giao diện đẹp hơn. Bật Auto Farm là treo máy, bật Spin cho vui.")
+print("✅ Đã sửa: khi tele và auto farm, nhân vật tự động nhìn xuống đất. Các chức năng khác giữ nguyên. Bật Auto Farm là treo máy.")
