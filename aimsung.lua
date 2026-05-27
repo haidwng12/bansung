@@ -1,6 +1,5 @@
 --[[
-    HAI DWNG - ARSENAL ULTIMATE (Spin, Auto Say, Inf Ammo, Giao diện đẹp)
-    Tele lên đầu, auto farm, spin 360°, auto chat quảng cáo, vô hạn đạn.
+    HAI DWNG - ARSENAL ULTIMATE (Spin 360, Auto Say, Inf Ammo, Giao diện đẹp)
 ]]
 
 local Players = game:GetService("Players")
@@ -10,7 +9,7 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local VirtualInput = game:GetService("VirtualInput")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Chat = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents") or game:GetService("Chat")
 
 -- CẤU HÌNH
 local SETTINGS = {
@@ -23,9 +22,7 @@ local SETTINGS = {
     Speed = false, Fly = false,
     TeamCheck = true, ShowFOV = false,
     AimPart = "Head", FOV = 450,
-    Spin = false,          -- Xoay 360 độ
-    AutoSay = false,       -- Auto chat quảng cáo
-    InfiniteAmmo = false   -- Vô hạn đạn
+    Spin = false, AutoSay = false, InfAmmo = false
 }
 local MIN_FOV, MAX_FOV = 30, 450
 local MAX_DISTANCE = 500
@@ -44,24 +41,28 @@ FOVCircle.Visible = false
 FOVCircle.Color = ACCENT_COLOR
 FOVCircle.Transparency = 0.6
 
--- Logo
+-- Biến spin
+local spinSpeed = 360 -- độ/giây
+local lastSpinTime = tick()
+
+-- Logo kéo thả (đẹp hơn)
 local Logo = Instance.new("TextButton")
 Logo.Name = "HaiDwnG_Logo"
 Logo.Parent = CoreGui
 Logo.Size = UDim2.new(0, 35, 0, 35)
-Logo.Position = UDim2.new(0, 5, 0, 5)
+Logo.Position = UDim2.new(0, 10, 0, 10)
 Logo.BackgroundColor3 = THEME_COLOR
-Logo.BackgroundTransparency = 0.2
-Logo.Text = "⚡"
+Logo.BackgroundTransparency = 0.3
+Logo.Text = "🌀"
 Logo.TextColor3 = Color3.new(1,1,1)
 Logo.TextSize = 20
 Logo.Font = Enum.Font.GothamBold
 Instance.new("UICorner", Logo).CornerRadius = UDim.new(1, 0)
 local strokeLogo = Instance.new("UIStroke", Logo)
 strokeLogo.Color = ACCENT_COLOR
+strokeLogo.Thickness = 1.5
 Logo.Parent = CoreGui
 
--- Kéo thả logo
 local logoDragging = false
 local logoDragStart, logoStartPos
 Logo.InputBegan:Connect(function(i)
@@ -79,45 +80,35 @@ UserInputService.TouchMoved:Connect(function(pos)
     end
 end)
 
--- GUI menu đẹp (gradient, viền neon)
+-- GUI menu (đẹp hơn: nền mờ, viền sáng)
 local gui = Instance.new("ScreenGui")
 gui.Name = "HaiDwnG"
 gui.Parent = CoreGui
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 240, 0, 400)
-main.Position = UDim2.new(0.5, -120, 0.4, -200)
+main.Size = UDim2.new(0, 240, 0, 380)
+main.Position = UDim2.new(0.5, -120, 0.4, -190)
 main.BackgroundColor3 = BG_COLOR
-main.BackgroundTransparency = 0.1
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
+main.BackgroundTransparency = 0.15
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
 local strokeMain = Instance.new("UIStroke", main)
 strokeMain.Color = THEME_COLOR
 strokeMain.Thickness = 2
 main.Parent = gui
 
--- Gradient nền
-local gradient = Instance.new("UIGradient")
-gradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, THEME_COLOR),
-    ColorSequenceKeypoint.new(1, ACCENT_COLOR)
-})
-gradient.Rotation = 45
-main:FindFirstChildOfClass("UIStroke").Parent = nil
-main.Parent = gui
-
 local title = Instance.new("TextButton")
 title.Size = UDim2.new(1, 0, 0, 36)
-title.Text = "⚡ HAI DWNG ⚡"
-title.TextColor3 = Color3.new(1,1,1)
-title.TextSize = 14
+title.Text = "🌀 HAI DWNG | ULTIMATE 🌀"
+title.TextColor3 = ACCENT_COLOR
+title.TextSize = 13
 title.Font = Enum.Font.GothamBold
 title.BackgroundTransparency = 1
 title.Parent = main
 
 local collapse = Instance.new("TextButton")
-collapse.Size = UDim2.new(0, 28, 0, 28)
-collapse.Position = UDim2.new(1, -32, 0, 4)
+collapse.Size = UDim2.new(0, 26, 0, 26)
+collapse.Position = UDim2.new(1, -30, 0, 5)
 collapse.BackgroundColor3 = Color3.fromRGB(30,30,40)
 collapse.Text = "−"
 collapse.TextColor3 = ACCENT_COLOR
@@ -126,8 +117,8 @@ Instance.new("UICorner", collapse).CornerRadius = UDim.new(1, 0)
 collapse.Parent = main
 
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -12, 1, -48)
-scroll.Position = UDim2.new(0, 6, 0, 42)
+scroll.Size = UDim2.new(1, -12, 1, -46)
+scroll.Position = UDim2.new(0, 6, 0, 40)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 3
 scroll.ScrollBarImageColor3 = THEME_COLOR
@@ -139,11 +130,12 @@ content.Size = UDim2.new(1, 0, 0, 800)
 content.BackgroundTransparency = 1
 content.Parent = scroll
 
+-- Toggle đẹp hơn
 local function addToggle(text, y, callback, default)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -8, 0, 28)
-    btn.Position = UDim2.new(0, 4, 0, y)
-    btn.BackgroundColor3 = default and THEME_COLOR or Color3.fromRGB(40,40,50)
+    btn.Size = UDim2.new(1, -10, 0, 28)
+    btn.Position = UDim2.new(0, 5, 0, y)
+    btn.BackgroundColor3 = default and THEME_COLOR or Color3.fromRGB(35,35,45)
     btn.Text = text .. (default and " ✅" or " ❌")
     btn.TextColor3 = Color3.new(1,1,1)
     btn.TextSize = 10
@@ -153,7 +145,7 @@ local function addToggle(text, y, callback, default)
     local active = default
     btn.MouseButton1Click:Connect(function()
         active = not active
-        btn.BackgroundColor3 = active and THEME_COLOR or Color3.fromRGB(40,40,50)
+        btn.BackgroundColor3 = active and THEME_COLOR or Color3.fromRGB(35,35,45)
         btn.Text = text .. (active and " ✅" or " ❌")
         callback(active)
     end)
@@ -174,9 +166,9 @@ addToggle("⚡ Auto Tap", y, function(v) SETTINGS.AutoTap = v end); y=y+30
 addToggle("🔪 Auto Knife", y, function(v) SETTINGS.AutoKnife = v end); y=y+30
 addToggle("💀 Kill All", y, function(v) SETTINGS.KillAll = v end); y=y+30
 addToggle("⚙️ Auto Farm", y, function(v) SETTINGS.AutoFarm = v end); y=y+30
-addToggle("🔄 Spin 360°", y, function(v) SETTINGS.Spin = v end); y=y+30
-addToggle("💬 Auto Say (Telegram)", y, function(v) SETTINGS.AutoSay = v end); y=y+30
-addToggle("♾️ Infinite Ammo", y, function(v) SETTINGS.InfiniteAmmo = v end); y=y+30
+addToggle("🌀 Spin 360°", y, function(v) SETTINGS.Spin = v end); y=y+30
+addToggle("💬 Auto Say", y, function(v) SETTINGS.AutoSay = v end); y=y+30
+addToggle("♾️ Infinite Ammo", y, function(v) SETTINGS.InfAmmo = v end); y=y+30
 addToggle("📦 Hitbox Expand", y, function(v) SETTINGS.HitboxExpand = v end); y=y+30
 addToggle("🌀 Noclip", y, function(v) SETTINGS.Noclip = v end); y=y+30
 addToggle("🚫 Team Check", y, function(v) SETTINGS.TeamCheck = v end, true); y=y+30
@@ -185,12 +177,12 @@ addToggle("🎯 No Spread", y, function(v) SETTINGS.NoSpread = v end); y=y+30
 addToggle("⚡ Fast Reload", y, function(v) SETTINGS.FastReload = v end); y=y+30
 addToggle("🏃 Speed/Jump", y, function(v) SETTINGS.Speed = v end); y=y+30
 addToggle("🦅 Fly", y, function(v) SETTINGS.Fly = v end); y=y+30
-addToggle("🌀 Vòng FOV", y, function(v) SETTINGS.ShowFOV = v end); y=y+34
+addToggle("🌀 Vòng FOV", y, function(v) SETTINGS.ShowFOV = v end); y=y+35
 
 -- Slider FOV
 local fovLabel = Instance.new("TextLabel")
-fovLabel.Size = UDim2.new(1, -8, 0, 20)
-fovLabel.Position = UDim2.new(0, 4, 0, y)
+fovLabel.Size = UDim2.new(1, -12, 0, 20)
+fovLabel.Position = UDim2.new(0, 6, 0, y)
 fovLabel.Text = "🎯 FOV: " .. SETTINGS.FOV
 fovLabel.TextColor3 = ACCENT_COLOR
 fovLabel.BackgroundTransparency = 1
@@ -200,9 +192,9 @@ fovLabel.Parent = content
 y = y + 20
 
 local sliderBg = Instance.new("Frame")
-sliderBg.Size = UDim2.new(1, -8, 0, 5)
-sliderBg.Position = UDim2.new(0, 4, 0, y)
-sliderBg.BackgroundColor3 = Color3.fromRGB(60,60,70)
+sliderBg.Size = UDim2.new(1, -12, 0, 5)
+sliderBg.Position = UDim2.new(0, 6, 0, y)
+sliderBg.BackgroundColor3 = Color3.fromRGB(50,50,60)
 Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1,0)
 sliderBg.Parent = content
 
@@ -245,12 +237,12 @@ sliderBg.InputBegan:Connect(function(i)
         updateFOV(MIN_FOV + math.clamp(rel,0,1) * (MAX_FOV - MIN_FOV))
     end
 end)
-y = y + 22
+y = y + 24
 
 local credit = Instance.new("TextLabel")
-credit.Size = UDim2.new(1, -8, 0, 20)
-credit.Position = UDim2.new(0, 4, 0, y)
-credit.Text = "@haidwng12"
+credit.Size = UDim2.new(1, -12, 0, 20)
+credit.Position = UDim2.new(0, 6, 0, y)
+credit.Text = "🌀 @haidwng12 | Telegram Script 🌀"
 credit.TextColor3 = THEME_COLOR
 credit.BackgroundTransparency = 1
 credit.TextSize = 9
@@ -280,15 +272,88 @@ local collapsed = false
 collapse.MouseButton1Click:Connect(function()
     collapsed = not collapsed
     collapse.Text = collapsed and "+" or "−"
-    main:TweenSize(collapsed and UDim2.new(0, 240, 0, 36) or UDim2.new(0, 240, 0, 400), "Out", "Quad", 0.2, true)
+    main:TweenSize(collapsed and UDim2.new(0, 240, 0, 36) or UDim2.new(0, 240, 0, 380), "Out", "Quad", 0.2, true)
     scroll.Visible = not collapsed
 end)
 
 Logo.MouseButton1Click:Connect(function()
     main.Visible = not main.Visible
+    Logo.BackgroundTransparency = main.Visible and 0.3 or 0.7
 end)
 
 -- ========== LOGIC ==========
+-- Hàm chat auto say
+local function sendChat(msg)
+    pcall(function()
+        local args = {["Message"] = msg}
+        game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest"):FireServer(msg, "All")
+    end)
+end
+
+-- Auto say khi kill (bắt sự kiện)
+local lastKillTime = 0
+if SETTINGS.AutoSay then
+    -- Lắng nghe sự kiện kill (dùng PlayerAdded hoặc Humanoid.Died)
+    game:GetService("Players").PlayerAdded:Connect(function(p)
+        p.CharacterAdded:Connect(function(char)
+            char:WaitForChild("Humanoid").Died:Connect(function()
+                if SETTINGS.AutoSay and tick() - lastKillTime > 1 then
+                    sendChat("@haidwng12 telegram script")
+                    lastKillTime = tick()
+                end
+            end)
+        end)
+    end)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            p.CharacterAdded:Connect(function(char)
+                char:WaitForChild("Humanoid").Died:Connect(function()
+                    if SETTINGS.AutoSay and tick() - lastKillTime > 1 then
+                        sendChat("@haidwng12 telegram script")
+                        lastKillTime = tick()
+                    end
+                end)
+            end)
+        end
+    end
+end
+
+-- Spin 360°
+RunService.RenderStepped:Connect(function(dt)
+    if SETTINGS.Spin and LocalPlayer.Character then
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local now = tick()
+            local delta = math.min(now - lastSpinTime, 0.1)
+            lastSpinTime = now
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(spinSpeed * delta), 0)
+        end
+    else
+        lastSpinTime = tick()
+    end
+end)
+
+-- Infinite Ammo (sửa tool)
+local function applyInfiniteAmmo()
+    if not SETTINGS.InfAmmo then return end
+    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
+    if tool then
+        for _, v in pairs(tool:GetDescendants()) do
+            if v:IsA("NumberValue") and (v.Name:lower():match("ammo") or v.Name:lower():match("bullet")) then
+                v.Value = 999
+            end
+        end
+    end
+end
+RunService.RenderStepped:Connect(applyInfiniteAmmo)
+
+-- Các hàm cũ (giữ nguyên từ script gốc, nhưng đã có)
+-- ... (các hàm isEnemy, isVisible, getTargetPart, getAnyEnemy, getVisibleTargetInFOV, getTargetPos, hook, aimbot, auto tap, auto knife, kill all, auto farm, hitbox, noclip, weapon mods, speed, fly, FOV circle, ESP) ...
+-- Vì quá dài, tôi sẽ chỉ giữ phần đã sửa và thêm vào cuối script gốc.
+
+-- (Chèn tất cả các hàm logic còn lại từ script gốc tại đây - để tiết kiệm thời gian, tôi sẽ sao chép lại phần logic từ script gốc trong câu trả lời)
+
+-- ========== CÁC HÀM LOGIC CŨ (giữ nguyên) ==========
 local function isEnemy(p)
     if not SETTINGS.TeamCheck then return true end
     return p.Team ~= LocalPlayer.Team
@@ -408,7 +473,7 @@ end)
 
 -- Auto Tap
 local lastTap = 0
-local function shoot()
+local function tapShoot()
     pcall(function()
         if VirtualInput then
             VirtualInput:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, Enum.UserInputState.Begin, Vector2.new(0,0))
@@ -433,7 +498,7 @@ RunService.RenderStepped:Connect(function()
             hasTarget = getAnyEnemy() ~= nil
         end
         if hasTarget and tick() - lastTap > 0.01 then
-            shoot()
+            tapShoot()
             lastTap = tick()
         end
     end
@@ -453,14 +518,14 @@ RunService.RenderStepped:Connect(function()
             if knife and knife:IsA("Tool") then
                 LocalPlayer.Character.Humanoid:EquipTool(knife)
                 task.wait(0.05)
-                shoot()
+                tapShoot()
                 lastKnife = tick()
             end
         end
     end
 end)
 
--- Kill All & Auto Farm
+-- Kill All & Auto Farm (tele lên đầu)
 local function teleAndKill(target)
     if not target or not target.Character then return end
     local aimPart = getTargetPart(target)
@@ -473,7 +538,7 @@ local function teleAndKill(target)
     myHrp.CFrame = CFrame.new(telePos, aimPart.Position)
     task.wait(0.02)
     for _ = 1, 3 do
-        shoot()
+        tapShoot()
         task.wait(0.005)
     end
 end
@@ -494,59 +559,7 @@ task.spawn(function()
     end
 end)
 
--- Spin 360 độ
-local lastSpin = tick()
-RunService.RenderStepped:Connect(function()
-    if SETTINGS.Spin and LocalPlayer.Character then
-        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local now = tick()
-            local delta = now - lastSpin
-            lastSpin = now
-            hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(360 * delta), 0)  -- quay 360 độ/giây
-        end
-    else
-        lastSpin = tick()
-    end
-end)
-
--- Auto Say Telegram
-task.spawn(function()
-    local lastSay = 0
-    while true do
-        if SETTINGS.AutoSay and tick() - lastSay > 30 then  -- 30 giây 1 lần
-            pcall(function()
-                local args = {[1] = "say", [2] = "@haidwng12 telegram script"}
-                local remote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents") or ReplicatedStorage:FindFirstChild("Chat")
-                if remote then
-                    -- Gửi chat (tùy game, Arsenal thường dùng SayMessageRequest)
-                    local sayRemote = ReplicatedStorage:FindFirstChild("SayMessageRequest") or ReplicatedStorage:FindFirstChild("Chatted")
-                    if sayRemote then
-                        sayRemote:FireServer("@haidwng12 telegram script", "All")
-                    end
-                end
-            end)
-            lastSay = tick()
-        end
-        task.wait(1)
-    end
-end)
-
--- Infinite Ammo (mod số đạn trong tool)
-RunService.Stepped:Connect(function()
-    if SETTINGS.InfiniteAmmo then
-        local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
-        if tool then
-            for _, v in pairs(tool:GetDescendants()) do
-                if v:IsA("NumberValue") and (v.Name:lower():match("ammo") or v.Name:lower():match("bullet")) then
-                    v.Value = 999
-                end
-            end
-        end
-    end
-end)
-
--- Hitbox Expander (chỉ địch)
+-- Hitbox Expander
 local expanded = {}
 RunService.RenderStepped:Connect(function()
     if not SETTINGS.HitboxExpand then
@@ -581,7 +594,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Weapon Mods
+-- Weapon Mods (No Recoil, No Spread, Fast Reload)
 local function applyMods()
     if not (SETTINGS.NoRecoil or SETTINGS.NoSpread or SETTINGS.FastReload) then return end
     local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
@@ -717,4 +730,4 @@ for _, p in pairs(Players:GetPlayers()) do AddESP(p) end
 Players.PlayerAdded:Connect(AddESP)
 Players.PlayerRemoving:Connect(function(p) if espData[p] then for _, d in pairs(espData[p]) do safeRemove(d) end espData[p]=nil end end)
 
-print("✅ Đã thêm Spin 360°, Auto Say Telegram, Infinite Ammo. Giao diện đẹp. Bật Auto Farm + Team Check là treo máy auto kill. Chơi Arsenal đỉnh cao.")
+print("✅ Đã thêm Spin 360°, Auto Say (@haidwng12 telegram script), Vô hạn đạn. Giao diện đẹp hơn. Bật Auto Farm là treo máy, bật Spin cho vui.")
