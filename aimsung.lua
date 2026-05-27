@@ -1,5 +1,5 @@
 --[[
-    HAI DWNG - ARSENAL ULTIMATE (Auto nhìn xuống đất khi tele)
+    HAI DWNG - ARSENAL ULTIMATE (Giao diện đẹp, tele nhìn xuống, auto farm)
 ]]
 
 local Players = game:GetService("Players")
@@ -9,275 +9,303 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local VirtualInput = game:GetService("VirtualInput")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- CẤU HÌNH (giữ nguyên)
+-- CẤU HÌNH
 local SETTINGS = {
     ESP = false, ESP_Name = true, ESP_Box = true, ESP_Line = false,
     ESP_Distance = false, ESP_Health = true,
     SilentAim = false, MagicBullet = false, AimLock = false,
     AutoTap = false, AutoKnife = false, KillAll = false, AutoFarm = false,
+    Spin = false, AutoSay = false, InfAmmo = false,
     HitboxExpand = false, Noclip = false,
     NoRecoil = false, NoSpread = false, FastReload = false,
     Speed = false, Fly = false,
     TeamCheck = true, ShowFOV = false,
-    AimPart = "Head", FOV = 450,
-    Spin = false, AutoSay = false, InfAmmo = false
+    AimPart = "Head", FOV = 450
 }
 local MIN_FOV, MAX_FOV = 30, 450
 local MAX_DISTANCE = 500
 local knifeRange = 20
 local hitboxExpandValue = 18
-local THEME_COLOR = Color3.fromRGB(255, 80, 120)
-local BG_COLOR = Color3.fromRGB(15, 15, 25)
-local ACCENT_COLOR = Color3.fromRGB(0, 255, 200)
+local spinSpeed = 360
+local lastSpinTime = tick()
+local lastSayTime = 0
 
--- Vòng FOV
+-- Màu sắc giao diện
+local THEME = Color3.fromRGB(255, 80, 120)
+local BG = Color3.fromRGB(15, 15, 25)
+local ACCENT = Color3.fromRGB(0, 255, 200)
+
+-- Vòng FOV (Drawing)
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 2
 FOVCircle.Radius = SETTINGS.FOV
-FOVCircle.Filled = false
 FOVCircle.Visible = false
-FOVCircle.Color = ACCENT_COLOR
+FOVCircle.Color = ACCENT
 FOVCircle.Transparency = 0.6
 
--- Biến spin
-local spinSpeed = 360 -- độ/giây
-local lastSpinTime = tick()
-
--- Logo
-local Logo = Instance.new("TextButton")
-Logo.Name = "HaiDwnG_Logo"
-Logo.Parent = CoreGui
-Logo.Size = UDim2.new(0, 35, 0, 35)
-Logo.Position = UDim2.new(0, 10, 0, 10)
-Logo.BackgroundColor3 = THEME_COLOR
-Logo.BackgroundTransparency = 0.3
-Logo.Text = "🌀"
-Logo.TextColor3 = Color3.new(1,1,1)
-Logo.TextSize = 20
-Logo.Font = Enum.Font.GothamBold
-Instance.new("UICorner", Logo).CornerRadius = UDim.new(1, 0)
-local strokeLogo = Instance.new("UIStroke", Logo)
-strokeLogo.Color = ACCENT_COLOR
-strokeLogo.Thickness = 1.5
-Logo.Parent = CoreGui
-
-local logoDragging = false
-local logoDragStart, logoStartPos
-Logo.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch then
-        logoDragging = true
-        logoDragStart = i.Position
-        logoStartPos = Logo.Position
-        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then logoDragging = false end end)
-    end
-end)
-UserInputService.TouchMoved:Connect(function(pos)
-    if logoDragging then
-        local delta = pos - logoDragStart
-        Logo.Position = UDim2.new(logoStartPos.X.Scale, logoStartPos.X.Offset + delta.X, logoStartPos.Y.Scale, logoStartPos.Y.Offset + delta.Y)
-    end
-end)
-
--- GUI menu
+-- ========== TẠO GUI ĐẸP (giống HTML demo) ==========
 local gui = Instance.new("ScreenGui")
-gui.Name = "HaiDwnG"
+gui.Name = "HaiDwnG_Ultimate"
 gui.Parent = CoreGui
 gui.ResetOnSpawn = false
 
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 240, 0, 380)
-main.Position = UDim2.new(0.5, -120, 0.4, -190)
-main.BackgroundColor3 = BG_COLOR
-main.BackgroundTransparency = 0.15
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
-local strokeMain = Instance.new("UIStroke", main)
-strokeMain.Color = THEME_COLOR
-strokeMain.Thickness = 2
-main.Parent = gui
+local menu = Instance.new("Frame")
+menu.Size = UDim2.new(0, 340, 0, 540)
+menu.Position = UDim2.new(0.5, -170, 0.5, -270)
+menu.BackgroundColor3 = Color3.fromRGB(12, 12, 22)
+menu.BackgroundTransparency = 0.35
+menu.BorderSizePixel = 0
+Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 28)
+local menuStroke = Instance.new("UIStroke", menu)
+menuStroke.Color = Color3.fromRGB(255, 80, 120)
+menuStroke.Thickness = 1.5
+menu.Parent = gui
 
-local title = Instance.new("TextButton")
-title.Size = UDim2.new(1, 0, 0, 36)
-title.Text = "🌀 HAI DWNG | ULTIMATE 🌀"
-title.TextColor3 = ACCENT_COLOR
-title.TextSize = 13
+-- Header (kéo thả)
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 48)
+header.BackgroundColor3 = Color3.fromRGB(26, 26, 46)
+header.BackgroundTransparency = 0.9
+header.BorderSizePixel = 0
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 28)
+header.Parent = menu
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(0.7, 0, 1, 0)
+title.Position = UDim2.new(0, 16, 0, 0)
+title.Text = "🌀 HAI DWNG | ULTIMATE"
+title.TextColor3 = Color3.fromRGB(255, 80, 120)
+title.TextSize = 16
 title.Font = Enum.Font.GothamBold
 title.BackgroundTransparency = 1
-title.Parent = main
+title.Parent = header
 
-local collapse = Instance.new("TextButton")
-collapse.Size = UDim2.new(0, 26, 0, 26)
-collapse.Position = UDim2.new(1, -30, 0, 5)
-collapse.BackgroundColor3 = Color3.fromRGB(30,30,40)
-collapse.Text = "−"
-collapse.TextColor3 = ACCENT_COLOR
-collapse.TextSize = 16
-Instance.new("UICorner", collapse).CornerRadius = UDim.new(1, 0)
-collapse.Parent = main
+local collapseBtn = Instance.new("TextButton")
+collapseBtn.Size = UDim2.new(0, 30, 0, 30)
+collapseBtn.Position = UDim2.new(1, -40, 0, 9)
+collapseBtn.Text = "−"
+collapseBtn.TextColor3 = ACCENT
+collapseBtn.TextSize = 20
+collapseBtn.Font = Enum.Font.GothamBold
+collapseBtn.BackgroundColor3 = Color3.fromRGB(42, 42, 60)
+Instance.new("UICorner", collapseBtn).CornerRadius = UDim.new(1, 0)
+collapseBtn.Parent = header
 
+-- Nội dung cuộn
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -12, 1, -46)
-scroll.Position = UDim2.new(0, 6, 0, 40)
+scroll.Size = UDim2.new(1, -20, 1, -60)
+scroll.Position = UDim2.new(0, 10, 0, 55)
 scroll.BackgroundTransparency = 1
-scroll.ScrollBarThickness = 3
-scroll.ScrollBarImageColor3 = THEME_COLOR
-scroll.CanvasSize = UDim2.new(0, 0, 0, 850)
-scroll.Parent = main
+scroll.ScrollBarThickness = 4
+scroll.ScrollBarImageColor3 = THEME
+scroll.CanvasSize = UDim2.new(0, 0, 0, 800)
+scroll.Parent = menu
 
 local content = Instance.new("Frame")
-content.Size = UDim2.new(1, 0, 0, 850)
+content.Size = UDim2.new(1, 0, 0, 800)
 content.BackgroundTransparency = 1
 content.Parent = scroll
 
-local function addToggle(text, y, callback, default)
+-- Hàm tạo section
+local function addSection(titleText, y)
+    local section = Instance.new("Frame")
+    section.Size = UDim2.new(1, 0, 0, 0)
+    section.Position = UDim2.new(0, 0, 0, y)
+    section.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+    section.BackgroundTransparency = 0.6
+    section.BorderSizePixel = 0
+    Instance.new("UICorner", section).CornerRadius = UDim.new(0, 20)
+    section.Parent = content
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -20, 0, 24)
+    titleLabel.Position = UDim2.new(0, 10, 0, 6)
+    titleLabel.Text = titleText
+    titleLabel.TextColor3 = Color3.fromRGB(255, 176, 192)
+    titleLabel.TextSize = 12
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Parent = section
+
+    return section, titleLabel
+end
+
+-- Hàm tạo toggle trong section
+local function addToggle(section, label, emoji, callback, default, yOffset)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 32)
+    frame.Position = UDim2.new(0, 10, 0, yOffset)
+    frame.BackgroundTransparency = 1
+    frame.Parent = section
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0.7, 0, 1, 0)
+    lbl.Text = emoji .. " " .. label
+    lbl.TextColor3 = Color3.new(1,1,1)
+    lbl.TextSize = 12
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.BackgroundTransparency = 1
+    lbl.Parent = frame
+
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 28)
-    btn.Position = UDim2.new(0, 5, 0, y)
-    btn.BackgroundColor3 = default and THEME_COLOR or Color3.fromRGB(35,35,45)
-    btn.Text = text .. (default and " ✅" or " ❌")
+    btn.Size = UDim2.new(0, 46, 0, 24)
+    btn.Position = UDim2.new(1, -56, 0, 4)
+    btn.BackgroundColor3 = default and THEME or Color3.fromRGB(58, 58, 78)
+    btn.Text = default and "ON" or "OFF"
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.TextSize = 10
-    btn.Font = Enum.Font.GothamMedium
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    btn.Parent = content
+    btn.TextSize = 11
+    btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+    btn.Parent = frame
+
     local active = default
     btn.MouseButton1Click:Connect(function()
         active = not active
-        btn.BackgroundColor3 = active and THEME_COLOR or Color3.fromRGB(35,35,45)
-        btn.Text = text .. (active and " ✅" or " ❌")
+        btn.BackgroundColor3 = active and THEME or Color3.fromRGB(58, 58, 78)
+        btn.Text = active and "ON" or "OFF"
         callback(active)
+    end)
+    return btn
+end
+
+-- Hàm tạo slider
+local function addSlider(section, label, minVal, maxVal, getVal, setVal, yOffset)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 50)
+    frame.Position = UDim2.new(0, 10, 0, yOffset)
+    frame.BackgroundTransparency = 1
+    frame.Parent = section
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 18)
+    lbl.Text = label .. ": " .. tostring(getVal())
+    lbl.TextColor3 = Color3.new(1,1,1)
+    lbl.TextSize = 11
+    lbl.BackgroundTransparency = 1
+    lbl.Parent = frame
+
+    local slider = Instance.new("Frame")
+    slider.Size = UDim2.new(1, 0, 0, 4)
+    slider.Position = UDim2.new(0, 0, 0, 22)
+    slider.BackgroundColor3 = Color3.fromRGB(58, 58, 78)
+    Instance.new("UICorner", slider).CornerRadius = UDim.new(1, 0)
+    slider.Parent = frame
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((getVal() - minVal) / (maxVal - minVal), 0, 1, 0)
+    fill.BackgroundColor3 = THEME
+    fill.Parent = slider
+
+    local ball = Instance.new("TextButton")
+    ball.Size = UDim2.new(0, 14, 0, 14)
+    ball.Position = UDim2.new(1, -7, 0.5, -7)
+    ball.BackgroundColor3 = ACCENT
+    Instance.new("UICorner", ball).CornerRadius = UDim.new(1,0)
+    ball.Text = ""
+    ball.Parent = fill
+
+    local dragging = false
+    local function update(pos)
+        local rel = (pos.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
+        local newVal = minVal + math.clamp(rel, 0, 1) * (maxVal - minVal)
+        setVal(newVal)
+        fill.Size = UDim2.new((newVal - minVal) / (maxVal - minVal), 0, 1, 0)
+        lbl.Text = label .. ": " .. math.floor(newVal)
+    end
+    ball.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            update(i.Position)
+        end
+    end)
+    UserInputService.TouchMoved:Connect(function(pos)
+        if dragging then update(pos) end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.Touch then dragging = false end
+    end)
+    slider.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.Touch then update(i.Position) end
     end)
 end
 
-local y = 4
-addToggle("👁️ ESP", y, function(v) SETTINGS.ESP = v end); y=y+30
-addToggle("  🏷️ Tên", y, function(v) SETTINGS.ESP_Name = v end, true); y=y+30
-addToggle("  📦 Box", y, function(v) SETTINGS.ESP_Box = v end, true); y=y+30
-addToggle("  📏 KC", y, function(v) SETTINGS.ESP_Distance = v end); y=y+30
-addToggle("  ❤️ Máu", y, function(v) SETTINGS.ESP_Health = v end, true); y=y+30
-addToggle("  〰️ Line", y, function(v) SETTINGS.ESP_Line = v end); y=y+30
-addToggle("🎯 Aim: Head/Body", y, function(v) SETTINGS.AimPart = v and "Head" or "Body" end, true); y=y+30
-addToggle("🔮 Silent Aim (visible)", y, function(v) SETTINGS.SilentAim = v end); y=y+30
-addToggle("✨ Magic Bullet (xuyên)", y, function(v) SETTINGS.MagicBullet = v end); y=y+30
-addToggle("🎯 Aimbot (visible)", y, function(v) SETTINGS.AimLock = v end); y=y+30
-addToggle("⚡ Auto Tap", y, function(v) SETTINGS.AutoTap = v end); y=y+30
-addToggle("🔪 Auto Knife", y, function(v) SETTINGS.AutoKnife = v end); y=y+30
-addToggle("💀 Kill All", y, function(v) SETTINGS.KillAll = v end); y=y+30
-addToggle("⚙️ Auto Farm", y, function(v) SETTINGS.AutoFarm = v end); y=y+30
-addToggle("🌀 Spin 360°", y, function(v) SETTINGS.Spin = v end); y=y+30
-addToggle("💬 Auto Say", y, function(v) SETTINGS.AutoSay = v end); y=y+30
-addToggle("♾️ Infinite Ammo", y, function(v) SETTINGS.InfAmmo = v end); y=y+30
-addToggle("📦 Hitbox Expand", y, function(v) SETTINGS.HitboxExpand = v end); y=y+30
-addToggle("🌀 Noclip", y, function(v) SETTINGS.Noclip = v end); y=y+30
-addToggle("🚫 Team Check", y, function(v) SETTINGS.TeamCheck = v end, true); y=y+30
-addToggle("💥 No Recoil", y, function(v) SETTINGS.NoRecoil = v end); y=y+30
-addToggle("🎯 No Spread", y, function(v) SETTINGS.NoSpread = v end); y=y+30
-addToggle("⚡ Fast Reload", y, function(v) SETTINGS.FastReload = v end); y=y+30
-addToggle("🏃 Speed/Jump", y, function(v) SETTINGS.Speed = v end); y=y+30
-addToggle("🦅 Fly", y, function(v) SETTINGS.Fly = v end); y=y+30
-addToggle("🌀 Vòng FOV", y, function(v) SETTINGS.ShowFOV = v end); y=y+35
+-- Xây dựng menu
+local y = 0
+local espSec, _ = addSection("👁️ ESP VISUALS", y); y = y + 100
+addToggle(espSec, "Master ESP", "🔘", function(v) SETTINGS.ESP = v end, false, 40)
+addToggle(espSec, "Name", "🏷️", function(v) SETTINGS.ESP_Name = v end, true, 75)
+addToggle(espSec, "Box", "📦", function(v) SETTINGS.ESP_Box = v end, true, 110)
+addToggle(espSec, "Health", "❤️", function(v) SETTINGS.ESP_Health = v end, true, 145)
+addToggle(espSec, "Line dọc", "〰️", function(v) SETTINGS.ESP_Line = v end, false, 180)
 
--- Slider FOV
-local fovLabel = Instance.new("TextLabel")
-fovLabel.Size = UDim2.new(1, -12, 0, 20)
-fovLabel.Position = UDim2.new(0, 6, 0, y)
-fovLabel.Text = "🎯 FOV: " .. SETTINGS.FOV
-fovLabel.TextColor3 = ACCENT_COLOR
-fovLabel.BackgroundTransparency = 1
-fovLabel.TextSize = 10
-fovLabel.Font = Enum.Font.GothamBold
-fovLabel.Parent = content
-y = y + 20
+local aimSec, _ = addSection("🎯 AIMBOT / SILENT", y); y = y + 100
+addToggle(aimSec, "Silent Aim (visible)", "🔮", function(v) SETTINGS.SilentAim = v end, false, 40)
+addToggle(aimSec, "Magic Bullet", "✨", function(v) SETTINGS.MagicBullet = v end, false, 75)
+addToggle(aimSec, "Aimbot (lock)", "🎯", function(v) SETTINGS.AimLock = v end, false, 110)
+addToggle(aimSec, "Auto Tap", "⚡", function(v) SETTINGS.AutoTap = v end, false, 145)
+addToggle(aimSec, "Auto Knife", "🔪", function(v) SETTINGS.AutoKnife = v end, false, 180)
 
-local sliderBg = Instance.new("Frame")
-sliderBg.Size = UDim2.new(1, -12, 0, 5)
-sliderBg.Position = UDim2.new(0, 6, 0, y)
-sliderBg.BackgroundColor3 = Color3.fromRGB(50,50,60)
-Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1,0)
-sliderBg.Parent = content
+local farmSec, _ = addSection("⚙️ AUTO FARM / KILL", y); y = y + 100
+addToggle(farmSec, "Kill All (once)", "💀", function(v) SETTINGS.KillAll = v end, false, 40)
+addToggle(farmSec, "Auto Farm (treo máy)", "⚙️", function(v) SETTINGS.AutoFarm = v end, false, 75)
+addToggle(farmSec, "Spin 360°", "🌀", function(v) SETTINGS.Spin = v end, false, 110)
+addToggle(farmSec, "Auto Say (@haidwng12)", "💬", function(v) SETTINGS.AutoSay = v end, false, 145)
+addToggle(farmSec, "Infinite Ammo", "♾️", function(v) SETTINGS.InfAmmo = v end, false, 180)
 
-local sliderFill = Instance.new("Frame")
-sliderFill.Size = UDim2.new((SETTINGS.FOV - MIN_FOV) / (MAX_FOV - MIN_FOV), 0, 1, 0)
-sliderFill.BackgroundColor3 = THEME_COLOR
-sliderFill.Parent = sliderBg
+local moveSec, _ = addSection("🦅 MOVEMENT & OTHER", y); y = y + 100
+addToggle(moveSec, "Speed/Jump", "🏃", function(v) SETTINGS.Speed = v end, false, 40)
+addToggle(moveSec, "Fly", "🦅", function(v) SETTINGS.Fly = v end, false, 75)
+addToggle(moveSec, "Noclip", "🌀", function(v) SETTINGS.Noclip = v end, false, 110)
+addToggle(moveSec, "Hitbox Expand", "📦", function(v) SETTINGS.HitboxExpand = v end, false, 145)
+addToggle(moveSec, "Team Check", "🚫", function(v) SETTINGS.TeamCheck = v end, true, 180)
 
-local sliderBall = Instance.new("TextButton")
-sliderBall.Size = UDim2.new(0, 14, 0, 14)
-sliderBall.Position = UDim2.new(1, -7, 0.5, -7)
-sliderBall.BackgroundColor3 = ACCENT_COLOR
-Instance.new("UICorner", sliderBall).CornerRadius = UDim.new(1,0)
-sliderBall.Text = ""
-sliderBall.Parent = sliderFill
+local fovSec, _ = addSection("🎯 FOV SETTINGS", y); y = y + 100
+addSlider(fovSec, "FOV Radius", MIN_FOV, MAX_FOV, function() return SETTINGS.FOV end, function(v) SETTINGS.FOV = v; FOVCircle.Radius = v end, 40)
+addToggle(fovSec, "Show FOV Circle", "🌀", function(v) SETTINGS.ShowFOV = v end, false, 90)
 
-local function updateFOV(val)
-    SETTINGS.FOV = math.clamp(val, MIN_FOV, MAX_FOV)
-    fovLabel.Text = "🎯 FOV: " .. math.floor(SETTINGS.FOV)
-    sliderFill.Size = UDim2.new((SETTINGS.FOV - MIN_FOV) / (MAX_FOV - MIN_FOV), 0, 1, 0)
-    FOVCircle.Radius = SETTINGS.FOV
-end
-
-local draggingFOV = false
-sliderBall.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch then draggingFOV = true end
-end)
-UserInputService.TouchMoved:Connect(function(pos)
-    if draggingFOV then
-        local rel = (pos.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X
-        updateFOV(MIN_FOV + math.clamp(rel,0,1) * (MAX_FOV - MIN_FOV))
-    end
-end)
-UserInputService.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch then draggingFOV = false end
-end)
-sliderBg.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch then
-        local rel = (i.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X
-        updateFOV(MIN_FOV + math.clamp(rel,0,1) * (MAX_FOV - MIN_FOV))
-    end
-end)
-y = y + 24
-
+-- Credit
 local credit = Instance.new("TextLabel")
-credit.Size = UDim2.new(1, -12, 0, 20)
-credit.Position = UDim2.new(0, 6, 0, y)
-credit.Text = "🌀 @haidwng12 | Telegram Script 🌀"
-credit.TextColor3 = THEME_COLOR
+credit.Size = UDim2.new(1, -20, 0, 30)
+credit.Position = UDim2.new(0, 10, 0, y)
+credit.Text = "🔥 @haidwng12 | TELEGRAM SCRIPT 🔥"
+credit.TextColor3 = THEME
 credit.BackgroundTransparency = 1
-credit.TextSize = 9
+credit.TextSize = 10
 credit.Font = Enum.Font.GothamBold
 credit.Parent = content
-scroll.CanvasSize = UDim2.new(0, 0, 0, y + 30)
+y = y + 40
+
+scroll.CanvasSize = UDim2.new(0, 0, 0, y + 20)
 
 -- Kéo thả menu
-local dragStart, startPos, draggingMenu = nil, nil, false
-title.InputBegan:Connect(function(i)
+local dragStart, startPos, dragMenu = nil, nil, false
+header.InputBegan:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.Touch then
-        draggingMenu = true
+        dragMenu = true
         dragStart = i.Position
-        startPos = main.Position
-        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then draggingMenu = false end end)
+        startPos = menu.Position
+        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then dragMenu = false end end)
     end
 end)
 UserInputService.TouchMoved:Connect(function(pos)
-    if draggingMenu then
+    if dragMenu then
         local delta = pos - dragStart
-        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        menu.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
-collapse.MouseButton1Click:Connect(function()
+-- Thu gọn menu
+local collapsed = false
+collapseBtn.MouseButton1Click:Connect(function()
     collapsed = not collapsed
-    collapse.Text = collapsed and "+" or "−"
-    main:TweenSize(collapsed and UDim2.new(0, 240, 0, 36) or UDim2.new(0, 240, 0, 380), "Out", "Quad", 0.2, true)
+    collapseBtn.Text = collapsed and "+" or "−"
+    menu:TweenSize(collapsed and UDim2.new(0, 340, 0, 60) or UDim2.new(0, 340, 0, 540), "Out", "Quad", 0.2, true)
     scroll.Visible = not collapsed
 end)
 
-Logo.MouseButton1Click:Connect(function()
-    main.Visible = not main.Visible
-    Logo.BackgroundTransparency = main.Visible and 0.3 or 0.7
-end)
-
--- ========== LOGIC CHÍNH (đã sửa tele nhìn xuống) ==========
+-- ========== LOGIC GAME (giữ nguyên từ bản trước, đã sửa tele nhìn xuống) ==========
 local function isEnemy(p)
     if not SETTINGS.TeamCheck then return true end
     return p.Team ~= LocalPlayer.Team
@@ -302,15 +330,15 @@ local function getTargetPart(target)
 end
 
 local function getAnyEnemy()
-    local nearest, bestDist = nil, math.huge
+    local nearest, best = nil, math.huge
     local camPos = Camera.CFrame.Position
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and isEnemy(p) then
             local part = getTargetPart(p)
             if part then
                 local d = (part.Position - camPos).Magnitude
-                if d < bestDist then
-                    bestDist = d
+                if d < best then
+                    best = d
                     nearest = p
                 end
             end
@@ -321,24 +349,24 @@ end
 
 local function getVisibleTargetInFOV()
     local center = Camera.ViewportSize / 2
-    local bestTarget, bestAngle = nil, SETTINGS.FOV
+    local best, bestAng = nil, SETTINGS.FOV
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and isEnemy(p) then
             local part = getTargetPart(p)
             local hum = p.Character:FindFirstChildOfClass("Humanoid")
             if part and hum and hum.Health > 0 then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                if onScreen then
-                    local angle = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                    if angle < bestAngle and isVisible(part) then
-                        bestAngle = angle
-                        bestTarget = p
+                local pos, on = Camera:WorldToViewportPoint(part.Position)
+                if on then
+                    local ang = (Vector2.new(pos.X, pos.Y) - center).Magnitude
+                    if ang < bestAng and isVisible(part) then
+                        bestAng = ang
+                        best = p
                     end
                 end
             end
         end
     end
-    return bestTarget
+    return best
 end
 
 local function getTargetPos()
@@ -355,14 +383,8 @@ local function getTargetPos()
 end
 
 -- Hook FireServer
-local hooked = false
-local function hookSilentMagic()
-    if hooked then return end
-    local mt = getrawmetatable(game)
-    if not mt then return end
-    local old = mt.__namecall
-    setreadonly(mt, false)
-    mt.__namecall = newcclosure(function(self, ...)
+if not getgenv().ArsenalHook then
+    local old = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
         local method = getnamecallmethod()
         if method == "FireServer" and (SETTINGS.SilentAim or SETTINGS.MagicBullet) then
             local pos = getTargetPos()
@@ -378,26 +400,22 @@ local function hookSilentMagic()
             end
         end
         return old(self, ...)
-    end)
-    setreadonly(mt, true)
-    hooked = true
+    end))
+    getgenv().ArsenalHook = true
 end
-task.spawn(function() while true do if (SETTINGS.SilentAim or SETTINGS.MagicBullet) and not hooked then hookSilentMagic() end task.wait(1) end end)
 
 -- Aimbot
 RunService.RenderStepped:Connect(function()
     if SETTINGS.AimLock then
-        local target = getVisibleTargetInFOV()
-        local part = target and getTargetPart(target)
-        if part then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
-        end
+        local t = getVisibleTargetInFOV()
+        local p = t and getTargetPart(t)
+        if p then Camera.CFrame = CFrame.new(Camera.CFrame.Position, p.Position) end
     end
 end)
 
--- Auto Tap
+-- Auto Tap & Bắn
 local lastTap = 0
-local function tapShoot()
+local function shoot()
     pcall(function()
         if VirtualInput then
             VirtualInput:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, Enum.UserInputState.Begin, Vector2.new(0,0))
@@ -413,18 +431,11 @@ end
 
 RunService.RenderStepped:Connect(function()
     if SETTINGS.AutoTap then
-        local hasTarget = false
-        if SETTINGS.MagicBullet then
-            hasTarget = getAnyEnemy() ~= nil
-        elseif SETTINGS.SilentAim then
-            hasTarget = getVisibleTargetInFOV() ~= nil
-        else
-            hasTarget = getAnyEnemy() ~= nil
-        end
-        if hasTarget and tick() - lastTap > 0.01 then
-            tapShoot()
-            lastTap = tick()
-        end
+        local has = false
+        if SETTINGS.MagicBullet then has = getAnyEnemy() ~= nil
+        elseif SETTINGS.SilentAim then has = getVisibleTargetInFOV() ~= nil
+        else has = getAnyEnemy() ~= nil end
+        if has and tick() - lastTap > 0.01 then shoot(); lastTap = tick() end
     end
 end)
 
@@ -442,14 +453,14 @@ RunService.RenderStepped:Connect(function()
             if knife and knife:IsA("Tool") then
                 LocalPlayer.Character.Humanoid:EquipTool(knife)
                 task.wait(0.05)
-                tapShoot()
+                shoot()
                 lastKnife = tick()
             end
         end
     end
 end)
 
--- ===== QUAN TRỌNG: HÀM TELE ĐÃ SỬA ĐỂ NHÌN XUỐNG ĐẤT =====
+-- Hàm tele + bắn (nhìn xuống đất)
 local function teleAndKill(target)
     if not target or not target.Character then return end
     local aimPart = getTargetPart(target)
@@ -458,31 +469,23 @@ local function teleAndKill(target)
     if not myChar then return end
     local myHrp = myChar:FindFirstChild("HumanoidRootPart")
     if not myHrp then return end
-    
-    -- Tính vị trí đứng trên đầu địch
     local telePos = aimPart.Position + Vector3.new(0, 2.5, 0)
-    -- Xoay nhân vật và camera hướng xuống dưới (vào đầu địch)
     myHrp.CFrame = CFrame.new(telePos, aimPart.Position)
-    -- Ép camera nhìn xuống (dự phòng)
     Camera.CFrame = CFrame.new(telePos, aimPart.Position)
     task.wait(0.02)
-    -- Bắn 3 phát
-    for _ = 1, 3 do
-        tapShoot()
-        task.wait(0.005)
-    end
+    for _ = 1, 3 do shoot(); task.wait(0.005) end
 end
 
 task.spawn(function()
     while true do
         if SETTINGS.KillAll then
-            local target = getAnyEnemy()
-            if target then teleAndKill(target) end
+            local t = getAnyEnemy()
+            if t then teleAndKill(t) end
             task.wait(0.05)
         end
         if SETTINGS.AutoFarm then
-            local target = getAnyEnemy()
-            if target then teleAndKill(target) end
+            local t = getAnyEnemy()
+            if t then teleAndKill(t) end
             task.wait(0.03)
         end
         task.wait(0.02)
@@ -493,9 +496,7 @@ end)
 local expanded = {}
 RunService.RenderStepped:Connect(function()
     if not SETTINGS.HitboxExpand then
-        for part, oldSize in pairs(expanded) do
-            pcall(function() part.Size = oldSize end)
-        end
+        for part, old in pairs(expanded) do pcall(function() part.Size = old end) end
         expanded = {}
         return
     end
@@ -524,7 +525,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Weapon Mods
+-- Weapon Mods (No Recoil, No Spread, Fast Reload)
 local function applyMods()
     if not (SETTINGS.NoRecoil or SETTINGS.NoSpread or SETTINGS.FastReload) then return end
     local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
@@ -543,68 +544,6 @@ local function applyMods()
     end
 end
 RunService.RenderStepped:Connect(applyMods)
-
--- Spin 360°
-RunService.RenderStepped:Connect(function(dt)
-    if SETTINGS.Spin and LocalPlayer.Character then
-        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local now = tick()
-            local delta = math.min(now - lastSpinTime, 0.1)
-            lastSpinTime = now
-            hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(spinSpeed * delta), 0)
-        end
-    else
-        lastSpinTime = tick()
-    end
-end)
-
--- Auto Say (khi kill)
-local function sendChat(msg)
-    pcall(function()
-        local sayRequest = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest")
-        if sayRequest then sayRequest:FireServer(msg, "All") end
-    end)
-end
-
-local lastSay = 0
--- Lắng nghe humanoid.Died của enemy
-local function onEnemyDied()
-    if SETTINGS.AutoSay and tick() - lastSay > 1 then
-        sendChat("@haidwng12 telegram script")
-        lastSay = tick()
-    end
-end
-
-for _, p in pairs(Players:GetPlayers()) do
-    if p ~= LocalPlayer then
-        p.CharacterAdded:Connect(function(char)
-            char:WaitForChild("Humanoid").Died:Connect(onEnemyDied)
-        end)
-        if p.Character then
-            p.Character:WaitForChild("Humanoid").Died:Connect(onEnemyDied)
-        end
-    end
-end
-Players.PlayerAdded:Connect(function(p)
-    p.CharacterAdded:Connect(function(char)
-        char:WaitForChild("Humanoid").Died:Connect(onEnemyDied)
-    end)
-end)
-
--- Infinite Ammo
-local function infiniteAmmo()
-    if not SETTINGS.InfAmmo then return end
-    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
-    if tool then
-        for _, v in pairs(tool:GetDescendants()) do
-            if v:IsA("NumberValue") and (v.Name:lower():match("ammo") or v.Name:lower():match("bullet")) then
-                v.Value = 999
-            end
-        end
-    end
-end
-RunService.RenderStepped:Connect(infiniteAmmo)
 
 -- Speed & Fly
 local flying = false
@@ -629,7 +568,7 @@ RunService.RenderStepped:Connect(function()
                 if hum then hum.PlatformStand = true end
             end
         end
-        if flying and bv and bg and LocalPlayer.Character then
+        if flying and bv and bg then
             local move = Vector3.new()
             if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + Camera.CFrame.LookVector end
             if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Camera.CFrame.LookVector end
@@ -650,6 +589,58 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- Spin 360
+RunService.RenderStepped:Connect(function(dt)
+    if SETTINGS.Spin and LocalPlayer.Character then
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local now = tick()
+            local delta = math.min(now - lastSpinTime, 0.1)
+            lastSpinTime = now
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(spinSpeed * delta), 0)
+        end
+    else
+        lastSpinTime = tick()
+    end
+end)
+
+-- Auto Say khi kill
+local function sendChat(msg)
+    pcall(function()
+        local sayRequest = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest")
+        if sayRequest then sayRequest:FireServer(msg, "All") end
+    end)
+end
+local function onEnemyDied()
+    if SETTINGS.AutoSay and tick() - lastSayTime > 1 then
+        sendChat("@haidwng12 telegram script")
+        lastSayTime = tick()
+    end
+end
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then
+        p.CharacterAdded:Connect(function(char) char:WaitForChild("Humanoid").Died:Connect(onEnemyDied) end)
+        if p.Character then p.Character:WaitForChild("Humanoid").Died:Connect(onEnemyDied) end
+    end
+end
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function(char) char:WaitForChild("Humanoid").Died:Connect(onEnemyDied) end)
+end)
+
+-- Infinite Ammo
+local function infiniteAmmo()
+    if not SETTINGS.InfAmmo then return end
+    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
+    if tool then
+        for _, v in pairs(tool:GetDescendants()) do
+            if v:IsA("NumberValue") and (v.Name:lower():match("ammo") or v.Name:lower():match("bullet")) then
+                v.Value = 999
+            end
+        end
+    end
+end
+RunService.RenderStepped:Connect(infiniteAmmo)
+
 -- FOV Circle
 RunService.RenderStepped:Connect(function()
     if SETTINGS.ShowFOV and Camera then
@@ -662,13 +653,13 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ESP
+-- ESP (vẽ)
 local function safeRemove(d) if d and d.Remove then pcall(d.Remove, d) end end
 local espData = {}
 local function AddESP(plr)
     if plr == LocalPlayer then return end
-    local box = Drawing.new("Square"); box.Thickness = 1; box.Filled = false; box.Color = THEME_COLOR
-    local line = Drawing.new("Line"); line.Thickness = 1; line.Color = ACCENT_COLOR
+    local box = Drawing.new("Square"); box.Thickness = 1; box.Filled = false; box.Color = THEME
+    local line = Drawing.new("Line"); line.Thickness = 1; line.Color = ACCENT
     local name = Drawing.new("Text"); name.Size = 8; name.Center = true; name.Outline = true; name.Color = Color3.new(1,1,1)
     local hbg = Drawing.new("Square"); hbg.Thickness = 1; hbg.Filled = true; hbg.Color = Color3.new(0,0,0); hbg.Transparency = 0.5
     local hfill = Drawing.new("Square"); hfill.Thickness = 0; hfill.Filled = true
@@ -722,4 +713,4 @@ for _, p in pairs(Players:GetPlayers()) do AddESP(p) end
 Players.PlayerAdded:Connect(AddESP)
 Players.PlayerRemoving:Connect(function(p) if espData[p] then for _, d in pairs(espData[p]) do safeRemove(d) end espData[p]=nil end end)
 
-print("✅ Đã sửa: khi tele và auto farm, nhân vật tự động nhìn xuống đất. Các chức năng khác giữ nguyên. Bật Auto Farm là treo máy.")
+print("✅ Giao diện đẹp đã sẵn sàng. Bật Auto Farm + Team Check để treo máy, Spin 360 cho vui, Auto Say quảng cáo.")
