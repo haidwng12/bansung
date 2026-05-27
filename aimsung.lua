@@ -1,5 +1,6 @@
 --[[
-    HAI DWNG - AUTO FARM TREO MÁY (Tự tele, tự bắn, không cần làm gì)
+    HAI DWNG - ARSENAL ULTIMATE (Spin, Auto Say, Inf Ammo, Giao diện đẹp)
+    Tele lên đầu, auto farm, spin 360°, auto chat quảng cáo, vô hạn đạn.
 ]]
 
 local Players = game:GetService("Players")
@@ -9,220 +10,318 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local VirtualInput = game:GetService("VirtualInput")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- CÀI ĐẶT
-local Settings = {
-    ESP = false,
-    AutoFarm = false,   -- Bật cái này là auto tele + bắn (treo máy)
-    AutoTap = false,    -- Chỉ tự bắn khi có địch (không tele)
-    TeamCheck = true,
-    ShowFOV = false,
-    FOV = 450
+-- CẤU HÌNH
+local SETTINGS = {
+    ESP = false, ESP_Name = true, ESP_Box = true, ESP_Line = false,
+    ESP_Distance = false, ESP_Health = true,
+    SilentAim = false, MagicBullet = false, AimLock = false,
+    AutoTap = false, AutoKnife = false, KillAll = false, AutoFarm = false,
+    HitboxExpand = false, Noclip = false,
+    NoRecoil = false, NoSpread = false, FastReload = false,
+    Speed = false, Fly = false,
+    TeamCheck = true, ShowFOV = false,
+    AimPart = "Head", FOV = 450,
+    Spin = false,          -- Xoay 360 độ
+    AutoSay = false,       -- Auto chat quảng cáo
+    InfiniteAmmo = false   -- Vô hạn đạn
 }
-local THEME = Color3.fromRGB(255, 80, 120)
-local ACCENT = Color3.fromRGB(0, 255, 200)
-local BG = Color3.fromRGB(20, 20, 30)
+local MIN_FOV, MAX_FOV = 30, 450
+local MAX_DISTANCE = 500
+local knifeRange = 20
+local hitboxExpandValue = 18
+local THEME_COLOR = Color3.fromRGB(255, 80, 120)
+local BG_COLOR = Color3.fromRGB(15, 15, 25)
+local ACCENT_COLOR = Color3.fromRGB(0, 255, 200)
 
 -- Vòng FOV
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 2
-FOVCircle.Radius = Settings.FOV
+FOVCircle.Radius = SETTINGS.FOV
+FOVCircle.Filled = false
 FOVCircle.Visible = false
-FOVCircle.Color = ACCENT
+FOVCircle.Color = ACCENT_COLOR
+FOVCircle.Transparency = 0.6
 
--- ========== MENU ==========
+-- Logo
+local Logo = Instance.new("TextButton")
+Logo.Name = "HaiDwnG_Logo"
+Logo.Parent = CoreGui
+Logo.Size = UDim2.new(0, 35, 0, 35)
+Logo.Position = UDim2.new(0, 5, 0, 5)
+Logo.BackgroundColor3 = THEME_COLOR
+Logo.BackgroundTransparency = 0.2
+Logo.Text = "⚡"
+Logo.TextColor3 = Color3.new(1,1,1)
+Logo.TextSize = 20
+Logo.Font = Enum.Font.GothamBold
+Instance.new("UICorner", Logo).CornerRadius = UDim.new(1, 0)
+local strokeLogo = Instance.new("UIStroke", Logo)
+strokeLogo.Color = ACCENT_COLOR
+Logo.Parent = CoreGui
+
+-- Kéo thả logo
+local logoDragging = false
+local logoDragStart, logoStartPos
+Logo.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.Touch then
+        logoDragging = true
+        logoDragStart = i.Position
+        logoStartPos = Logo.Position
+        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then logoDragging = false end end)
+    end
+end)
+UserInputService.TouchMoved:Connect(function(pos)
+    if logoDragging then
+        local delta = pos - logoDragStart
+        Logo.Position = UDim2.new(logoStartPos.X.Scale, logoStartPos.X.Offset + delta.X, logoStartPos.Y.Scale, logoStartPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- GUI menu đẹp (gradient, viền neon)
 local gui = Instance.new("ScreenGui")
-gui.Name = "AutoFarmGUI"
+gui.Name = "HaiDwnG"
 gui.Parent = CoreGui
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 200, 0, 280)
-main.Position = UDim2.new(0.5, -100, 0.5, -140)
-main.BackgroundColor3 = BG
+main.Size = UDim2.new(0, 240, 0, 400)
+main.Position = UDim2.new(0.5, -120, 0.4, -200)
+main.BackgroundColor3 = BG_COLOR
 main.BackgroundTransparency = 0.1
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
-local stroke = Instance.new("UIStroke", main)
-stroke.Color = THEME
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
+local strokeMain = Instance.new("UIStroke", main)
+strokeMain.Color = THEME_COLOR
+strokeMain.Thickness = 2
+main.Parent = gui
+
+-- Gradient nền
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, THEME_COLOR),
+    ColorSequenceKeypoint.new(1, ACCENT_COLOR)
+})
+gradient.Rotation = 45
+main:FindFirstChildOfClass("UIStroke").Parent = nil
 main.Parent = gui
 
 local title = Instance.new("TextButton")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "⚡ AUTO FARM ⚡"
-title.TextColor3 = ACCENT
-title.TextSize = 12
+title.Size = UDim2.new(1, 0, 0, 36)
+title.Text = "⚡ HAI DWNG ⚡"
+title.TextColor3 = Color3.new(1,1,1)
+title.TextSize = 14
 title.Font = Enum.Font.GothamBold
 title.BackgroundTransparency = 1
 title.Parent = main
 
+local collapse = Instance.new("TextButton")
+collapse.Size = UDim2.new(0, 28, 0, 28)
+collapse.Position = UDim2.new(1, -32, 0, 4)
+collapse.BackgroundColor3 = Color3.fromRGB(30,30,40)
+collapse.Text = "−"
+collapse.TextColor3 = ACCENT_COLOR
+collapse.TextSize = 16
+Instance.new("UICorner", collapse).CornerRadius = UDim.new(1, 0)
+collapse.Parent = main
+
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -12, 1, -48)
+scroll.Position = UDim2.new(0, 6, 0, 42)
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 3
+scroll.ScrollBarImageColor3 = THEME_COLOR
+scroll.CanvasSize = UDim2.new(0, 0, 0, 800)
+scroll.Parent = main
+
 local content = Instance.new("Frame")
-content.Size = UDim2.new(1, -10, 1, -40)
-content.Position = UDim2.new(0, 5, 0, 35)
+content.Size = UDim2.new(1, 0, 0, 800)
 content.BackgroundTransparency = 1
-content.Parent = main
+content.Parent = scroll
 
-local espBtn = Instance.new("TextButton")
-espBtn.Size = UDim2.new(1, 0, 0, 30)
-espBtn.Position = UDim2.new(0, 0, 0, 5)
-espBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
-espBtn.Text = "👁️ ESP: OFF"
-espBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", espBtn).CornerRadius = UDim.new(0, 5)
-espBtn.Parent = content
+local function addToggle(text, y, callback, default)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -8, 0, 28)
+    btn.Position = UDim2.new(0, 4, 0, y)
+    btn.BackgroundColor3 = default and THEME_COLOR or Color3.fromRGB(40,40,50)
+    btn.Text = text .. (default and " ✅" or " ❌")
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextSize = 10
+    btn.Font = Enum.Font.GothamMedium
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    btn.Parent = content
+    local active = default
+    btn.MouseButton1Click:Connect(function()
+        active = not active
+        btn.BackgroundColor3 = active and THEME_COLOR or Color3.fromRGB(40,40,50)
+        btn.Text = text .. (active and " ✅" or " ❌")
+        callback(active)
+    end)
+end
 
-local farmBtn = Instance.new("TextButton")
-farmBtn.Size = UDim2.new(1, 0, 0, 30)
-farmBtn.Position = UDim2.new(0, 0, 0, 40)
-farmBtn.BackgroundColor3 = Color3.fromRGB(80,200,80)
-farmBtn.Text = "⚙️ AUTO FARM: ON"
-farmBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", farmBtn).CornerRadius = UDim.new(0, 5)
-farmBtn.Parent = content
+local y = 4
+addToggle("👁️ ESP", y, function(v) SETTINGS.ESP = v end); y=y+30
+addToggle("  🏷️ Tên", y, function(v) SETTINGS.ESP_Name = v end, true); y=y+30
+addToggle("  📦 Box", y, function(v) SETTINGS.ESP_Box = v end, true); y=y+30
+addToggle("  📏 KC", y, function(v) SETTINGS.ESP_Distance = v end); y=y+30
+addToggle("  ❤️ Máu", y, function(v) SETTINGS.ESP_Health = v end, true); y=y+30
+addToggle("  〰️ Line", y, function(v) SETTINGS.ESP_Line = v end); y=y+30
+addToggle("🎯 Aim: Head/Body", y, function(v) SETTINGS.AimPart = v and "Head" or "Body" end, true); y=y+30
+addToggle("🔮 Silent Aim (visible)", y, function(v) SETTINGS.SilentAim = v end); y=y+30
+addToggle("✨ Magic Bullet (xuyên)", y, function(v) SETTINGS.MagicBullet = v end); y=y+30
+addToggle("🎯 Aimbot (visible)", y, function(v) SETTINGS.AimLock = v end); y=y+30
+addToggle("⚡ Auto Tap", y, function(v) SETTINGS.AutoTap = v end); y=y+30
+addToggle("🔪 Auto Knife", y, function(v) SETTINGS.AutoKnife = v end); y=y+30
+addToggle("💀 Kill All", y, function(v) SETTINGS.KillAll = v end); y=y+30
+addToggle("⚙️ Auto Farm", y, function(v) SETTINGS.AutoFarm = v end); y=y+30
+addToggle("🔄 Spin 360°", y, function(v) SETTINGS.Spin = v end); y=y+30
+addToggle("💬 Auto Say (Telegram)", y, function(v) SETTINGS.AutoSay = v end); y=y+30
+addToggle("♾️ Infinite Ammo", y, function(v) SETTINGS.InfiniteAmmo = v end); y=y+30
+addToggle("📦 Hitbox Expand", y, function(v) SETTINGS.HitboxExpand = v end); y=y+30
+addToggle("🌀 Noclip", y, function(v) SETTINGS.Noclip = v end); y=y+30
+addToggle("🚫 Team Check", y, function(v) SETTINGS.TeamCheck = v end, true); y=y+30
+addToggle("💥 No Recoil", y, function(v) SETTINGS.NoRecoil = v end); y=y+30
+addToggle("🎯 No Spread", y, function(v) SETTINGS.NoSpread = v end); y=y+30
+addToggle("⚡ Fast Reload", y, function(v) SETTINGS.FastReload = v end); y=y+30
+addToggle("🏃 Speed/Jump", y, function(v) SETTINGS.Speed = v end); y=y+30
+addToggle("🦅 Fly", y, function(v) SETTINGS.Fly = v end); y=y+30
+addToggle("🌀 Vòng FOV", y, function(v) SETTINGS.ShowFOV = v end); y=y+34
 
-local tapBtn = Instance.new("TextButton")
-tapBtn.Size = UDim2.new(1, 0, 0, 30)
-tapBtn.Position = UDim2.new(0, 0, 0, 75)
-tapBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
-tapBtn.Text = "🔫 AUTO TAP: OFF"
-tapBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", tapBtn).CornerRadius = UDim.new(0, 5)
-tapBtn.Parent = content
-
-local teamBtn = Instance.new("TextButton")
-teamBtn.Size = UDim2.new(1, 0, 0, 30)
-teamBtn.Position = UDim2.new(0, 0, 0, 110)
-teamBtn.BackgroundColor3 = Color3.fromRGB(80,200,80)
-teamBtn.Text = "🚫 TEAM CHECK: ON"
-teamBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", teamBtn).CornerRadius = UDim.new(0, 5)
-teamBtn.Parent = content
-
-local fovBtn = Instance.new("TextButton")
-fovBtn.Size = UDim2.new(1, 0, 0, 30)
-fovBtn.Position = UDim2.new(0, 0, 0, 145)
-fovBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
-fovBtn.Text = "🌀 FOV CIRCLE: OFF"
-fovBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", fovBtn).CornerRadius = UDim.new(0, 5)
-fovBtn.Parent = content
-
+-- Slider FOV
 local fovLabel = Instance.new("TextLabel")
-fovLabel.Size = UDim2.new(1, 0, 0, 15)
-fovLabel.Position = UDim2.new(0, 0, 0, 180)
-fovLabel.Text = "FOV: 450"
-fovLabel.TextColor3 = ACCENT
+fovLabel.Size = UDim2.new(1, -8, 0, 20)
+fovLabel.Position = UDim2.new(0, 4, 0, y)
+fovLabel.Text = "🎯 FOV: " .. SETTINGS.FOV
+fovLabel.TextColor3 = ACCENT_COLOR
 fovLabel.BackgroundTransparency = 1
-fovLabel.TextSize = 9
+fovLabel.TextSize = 10
+fovLabel.Font = Enum.Font.GothamBold
 fovLabel.Parent = content
+y = y + 20
 
 local sliderBg = Instance.new("Frame")
-sliderBg.Size = UDim2.new(1, 0, 0, 4)
-sliderBg.Position = UDim2.new(0, 0, 0, 198)
+sliderBg.Size = UDim2.new(1, -8, 0, 5)
+sliderBg.Position = UDim2.new(0, 4, 0, y)
 sliderBg.BackgroundColor3 = Color3.fromRGB(60,60,70)
 Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1,0)
 sliderBg.Parent = content
 
 local sliderFill = Instance.new("Frame")
-sliderFill.Size = UDim2.new((Settings.FOV - 30) / 420, 0, 1, 0)
-sliderFill.BackgroundColor3 = THEME
+sliderFill.Size = UDim2.new((SETTINGS.FOV - MIN_FOV) / (MAX_FOV - MIN_FOV), 0, 1, 0)
+sliderFill.BackgroundColor3 = THEME_COLOR
 sliderFill.Parent = sliderBg
 
 local sliderBall = Instance.new("TextButton")
-sliderBall.Size = UDim2.new(0, 12, 0, 12)
-sliderBall.Position = UDim2.new(1, -6, 0.5, -6)
-sliderBall.BackgroundColor3 = ACCENT
+sliderBall.Size = UDim2.new(0, 14, 0, 14)
+sliderBall.Position = UDim2.new(1, -7, 0.5, -7)
+sliderBall.BackgroundColor3 = ACCENT_COLOR
 Instance.new("UICorner", sliderBall).CornerRadius = UDim.new(1,0)
+sliderBall.Text = ""
 sliderBall.Parent = sliderFill
 
-local function setFOV(val)
-    Settings.FOV = math.clamp(val, 30, 450)
-    fovLabel.Text = "FOV: " .. math.floor(Settings.FOV)
-    sliderFill.Size = UDim2.new((Settings.FOV - 30) / 420, 0, 1, 0)
-    FOVCircle.Radius = Settings.FOV
+local function updateFOV(val)
+    SETTINGS.FOV = math.clamp(val, MIN_FOV, MAX_FOV)
+    fovLabel.Text = "🎯 FOV: " .. math.floor(SETTINGS.FOV)
+    sliderFill.Size = UDim2.new((SETTINGS.FOV - MIN_FOV) / (MAX_FOV - MIN_FOV), 0, 1, 0)
+    FOVCircle.Radius = SETTINGS.FOV
 end
 
-local dragging = false
+local draggingFOV = false
 sliderBall.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch then dragging = true end
+    if i.UserInputType == Enum.UserInputType.Touch then draggingFOV = true end
 end)
 UserInputService.TouchMoved:Connect(function(pos)
-    if dragging then
+    if draggingFOV then
         local rel = (pos.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X
-        setFOV(30 + math.clamp(rel,0,1) * 420)
+        updateFOV(MIN_FOV + math.clamp(rel,0,1) * (MAX_FOV - MIN_FOV))
     end
 end)
 UserInputService.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch then dragging = false end
+    if i.UserInputType == Enum.UserInputType.Touch then draggingFOV = false end
 end)
+sliderBg.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.Touch then
+        local rel = (i.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X
+        updateFOV(MIN_FOV + math.clamp(rel,0,1) * (MAX_FOV - MIN_FOV))
+    end
+end)
+y = y + 22
 
-espBtn.MouseButton1Click:Connect(function()
-    Settings.ESP = not Settings.ESP
-    espBtn.BackgroundColor3 = Settings.ESP and Color3.fromRGB(80,200,80) or Color3.fromRGB(40,40,50)
-    espBtn.Text = "👁️ ESP: " .. (Settings.ESP and "ON" or "OFF")
-end)
-
-farmBtn.MouseButton1Click:Connect(function()
-    Settings.AutoFarm = not Settings.AutoFarm
-    farmBtn.BackgroundColor3 = Settings.AutoFarm and Color3.fromRGB(80,200,80) or Color3.fromRGB(40,40,50)
-    farmBtn.Text = "⚙️ AUTO FARM: " .. (Settings.AutoFarm and "ON" or "OFF")
-end)
-
-tapBtn.MouseButton1Click:Connect(function()
-    Settings.AutoTap = not Settings.AutoTap
-    tapBtn.BackgroundColor3 = Settings.AutoTap and Color3.fromRGB(80,200,80) or Color3.fromRGB(40,40,50)
-    tapBtn.Text = "🔫 AUTO TAP: " .. (Settings.AutoTap and "ON" or "OFF")
-end)
-
-teamBtn.MouseButton1Click:Connect(function()
-    Settings.TeamCheck = not Settings.TeamCheck
-    teamBtn.BackgroundColor3 = Settings.TeamCheck and Color3.fromRGB(80,200,80) or Color3.fromRGB(40,40,50)
-    teamBtn.Text = "🚫 TEAM CHECK: " .. (Settings.TeamCheck and "ON" or "OFF")
-end)
-
-fovBtn.MouseButton1Click:Connect(function()
-    Settings.ShowFOV = not Settings.ShowFOV
-    fovBtn.BackgroundColor3 = Settings.ShowFOV and Color3.fromRGB(80,200,80) or Color3.fromRGB(40,40,50)
-    fovBtn.Text = "🌀 FOV CIRCLE: " .. (Settings.ShowFOV and "ON" or "OFF")
-end)
+local credit = Instance.new("TextLabel")
+credit.Size = UDim2.new(1, -8, 0, 20)
+credit.Position = UDim2.new(0, 4, 0, y)
+credit.Text = "@haidwng12"
+credit.TextColor3 = THEME_COLOR
+credit.BackgroundTransparency = 1
+credit.TextSize = 9
+credit.Font = Enum.Font.GothamBold
+credit.Parent = content
+scroll.CanvasSize = UDim2.new(0, 0, 0, y + 30)
 
 -- Kéo thả menu
-local dragStart, startPos, dragMenu = nil, nil, false
+local dragStart, startPos, draggingMenu = nil, nil, false
 title.InputBegan:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.Touch then
-        dragMenu = true
+        draggingMenu = true
         dragStart = i.Position
         startPos = main.Position
-        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then dragMenu = false end end)
+        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then draggingMenu = false end end)
     end
 end)
 UserInputService.TouchMoved:Connect(function(pos)
-    if dragMenu then
+    if draggingMenu then
         local delta = pos - dragStart
         main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
+-- Thu gọn menu
+local collapsed = false
+collapse.MouseButton1Click:Connect(function()
+    collapsed = not collapsed
+    collapse.Text = collapsed and "+" or "−"
+    main:TweenSize(collapsed and UDim2.new(0, 240, 0, 36) or UDim2.new(0, 240, 0, 400), "Out", "Quad", 0.2, true)
+    scroll.Visible = not collapsed
+end)
+
+Logo.MouseButton1Click:Connect(function()
+    main.Visible = not main.Visible
+end)
+
 -- ========== LOGIC ==========
 local function isEnemy(p)
-    if not Settings.TeamCheck then return true end
+    if not SETTINGS.TeamCheck then return true end
     return p.Team ~= LocalPlayer.Team
+end
+
+local function isVisible(part)
+    if not part then return false end
+    local ray = RaycastParams.new()
+    ray.FilterDescendantsInstances = {LocalPlayer.Character}
+    ray.FilterType = Enum.RaycastFilterType.Blacklist
+    local result = workspace:Raycast(Camera.CFrame.Position, (part.Position - Camera.CFrame.Position), ray)
+    return not result or result.Instance:IsDescendantOf(part.Parent)
 end
 
 local function getTargetPart(target)
     if not target or not target.Character then return nil end
-    return target.Character:FindFirstChild("Head") or target.Character:FindFirstChild("UpperTorso") or target.Character:FindFirstChild("HumanoidRootPart")
+    if SETTINGS.AimPart == "Head" then
+        return target.Character:FindFirstChild("Head") or target.Character:FindFirstChild("UpperTorso") or target.Character:FindFirstChild("HumanoidRootPart")
+    else
+        return target.Character:FindFirstChild("UpperTorso") or target.Character:FindFirstChild("HumanoidRootPart") or target.Character:FindFirstChild("Head")
+    end
 end
 
 local function getAnyEnemy()
-    local nearest, best = nil, math.huge
+    local nearest, bestDist = nil, math.huge
     local camPos = Camera.CFrame.Position
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and isEnemy(p) then
             local part = getTargetPart(p)
             if part then
                 local d = (part.Position - camPos).Magnitude
-                if d < best then
-                    best = d
+                if d < bestDist then
+                    bestDist = d
                     nearest = p
                 end
             end
@@ -231,7 +330,84 @@ local function getAnyEnemy()
     return nearest
 end
 
--- Hàm bắn (dùng VirtualInput và UserInputService dự phòng)
+local function getVisibleTargetInFOV()
+    local center = Camera.ViewportSize / 2
+    local bestTarget, bestAngle = nil, SETTINGS.FOV
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and isEnemy(p) then
+            local part = getTargetPart(p)
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if part and hum and hum.Health > 0 then
+                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                if onScreen then
+                    local angle = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                    if angle < bestAngle and isVisible(part) then
+                        bestAngle = angle
+                        bestTarget = p
+                    end
+                end
+            end
+        end
+    end
+    return bestTarget
+end
+
+local function getTargetPos()
+    if SETTINGS.MagicBullet then
+        local t = getAnyEnemy()
+        local p = t and getTargetPart(t)
+        return p and p.Position
+    elseif SETTINGS.SilentAim then
+        local t = getVisibleTargetInFOV()
+        local p = t and getTargetPart(t)
+        if p and isVisible(p) then return p.Position end
+    end
+    return nil
+end
+
+-- Hook FireServer
+local hooked = false
+local function hookSilentMagic()
+    if hooked then return end
+    local mt = getrawmetatable(game)
+    if not mt then return end
+    local old = mt.__namecall
+    setreadonly(mt, false)
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if method == "FireServer" and (SETTINGS.SilentAim or SETTINGS.MagicBullet) then
+            local pos = getTargetPos()
+            if pos then
+                local args = {...}
+                for i, v in ipairs(args) do
+                    if typeof(v) == "Vector3" then
+                        args[i] = pos
+                        break
+                    end
+                end
+                return old(self, unpack(args))
+            end
+        end
+        return old(self, ...)
+    end)
+    setreadonly(mt, true)
+    hooked = true
+end
+task.spawn(function() while true do if (SETTINGS.SilentAim or SETTINGS.MagicBullet) and not hooked then hookSilentMagic() end task.wait(1) end end)
+
+-- Aimbot
+RunService.RenderStepped:Connect(function()
+    if SETTINGS.AimLock then
+        local target = getVisibleTargetInFOV()
+        local part = target and getTargetPart(target)
+        if part then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
+        end
+    end
+end)
+
+-- Auto Tap
+local lastTap = 0
 local function shoot()
     pcall(function()
         if VirtualInput then
@@ -246,106 +422,299 @@ local function shoot()
     end)
 end
 
--- Auto Tap (chỉ bắn, không tele)
-local lastTap = 0
 RunService.RenderStepped:Connect(function()
-    if Settings.AutoTap and not Settings.AutoFarm then
-        if getAnyEnemy() and tick() - lastTap > 0.02 then
+    if SETTINGS.AutoTap then
+        local hasTarget = false
+        if SETTINGS.MagicBullet then
+            hasTarget = getAnyEnemy() ~= nil
+        elseif SETTINGS.SilentAim then
+            hasTarget = getVisibleTargetInFOV() ~= nil
+        else
+            hasTarget = getAnyEnemy() ~= nil
+        end
+        if hasTarget and tick() - lastTap > 0.01 then
             shoot()
             lastTap = tick()
         end
     end
 end)
 
--- Auto Farm (tele + bắn liên tục)
-local function autoFarmCycle()
-    local target = getAnyEnemy()
-    if target and target.Character then
-        local aimPart = getTargetPart(target)
-        if aimPart and LocalPlayer.Character then
-            local myHrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if myHrp then
-                -- Tele lên đầu địch
-                local telePos = aimPart.Position + Vector3.new(0, 2.5, 0)
-                myHrp.CFrame = CFrame.new(telePos, aimPart.Position)
-                task.wait(0.03)
-                -- Bắn 3 phát
-                for i = 1, 3 do
-                    shoot()
-                    task.wait(0.01)
-                end
+-- Auto Knife
+local lastKnife = 0
+RunService.RenderStepped:Connect(function()
+    if not SETTINGS.AutoKnife then return end
+    if tick() - lastKnife < 0.5 then return end
+    local nearest = getAnyEnemy()
+    if nearest and nearest.Character then
+        local tHrp = nearest.Character:FindFirstChild("HumanoidRootPart")
+        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if tHrp and myHrp and (tHrp.Position - myHrp.Position).Magnitude < knifeRange then
+            local knife = LocalPlayer.Backpack:FindFirstChild("Knife") or LocalPlayer.Character:FindFirstChild("Knife")
+            if knife and knife:IsA("Tool") then
+                LocalPlayer.Character.Humanoid:EquipTool(knife)
+                task.wait(0.05)
+                shoot()
+                lastKnife = tick()
             end
         end
+    end
+end)
+
+-- Kill All & Auto Farm
+local function teleAndKill(target)
+    if not target or not target.Character then return end
+    local aimPart = getTargetPart(target)
+    if not aimPart then return end
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
+    local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+    if not myHrp then return end
+    local telePos = aimPart.Position + Vector3.new(0, 2.5, 0)
+    myHrp.CFrame = CFrame.new(telePos, aimPart.Position)
+    task.wait(0.02)
+    for _ = 1, 3 do
+        shoot()
+        task.wait(0.005)
     end
 end
 
 task.spawn(function()
     while true do
-        if Settings.AutoFarm then
-            autoFarmCycle()
+        if SETTINGS.KillAll then
+            local target = getAnyEnemy()
+            if target then teleAndKill(target) end
+            task.wait(0.05)
         end
-        task.wait(0.05)
+        if SETTINGS.AutoFarm then
+            local target = getAnyEnemy()
+            if target then teleAndKill(target) end
+            task.wait(0.03)
+        end
+        task.wait(0.02)
     end
 end)
 
--- ========== ESP ==========
-local espDrawings = {}
-local function refreshESP()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and isEnemy(p) and p.Character then
-            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-            local hum = p.Character:FindFirstChildOfClass("Humanoid")
-            if hrp and hum and hum.Health > 0 then
-                local pos, on = Camera:WorldToViewportPoint(hrp.Position)
-                if on then
-                    if not espDrawings[p] then
-                        local box = Drawing.new("Square"); box.Thickness = 1; box.Filled = false; box.Color = THEME
-                        local name = Drawing.new("Text"); name.Size = 9; name.Center = true; name.Outline = true; name.Color = Color3.new(1,1,1)
-                        espDrawings[p] = {box, name}
-                    end
-                    local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
-                    local h = math.clamp(2800/dist, 30, 150)
-                    local w = math.clamp(1800/dist, 30, 90)
-                    local top = pos.Y - h/2
-                    local left = pos.X - w/2
-                    espDrawings[p][1].Size = Vector2.new(w, h)
-                    espDrawings[p][1].Position = Vector2.new(left, top)
-                    espDrawings[p][1].Visible = true
-                    espDrawings[p][2].Text = p.Name
-                    espDrawings[p][2].Position = Vector2.new(pos.X, top - 8)
-                    espDrawings[p][2].Visible = true
-                else
-                    if espDrawings[p] then
-                        espDrawings[p][1].Visible = false
-                        espDrawings[p][2].Visible = false
+-- Spin 360 độ
+local lastSpin = tick()
+RunService.RenderStepped:Connect(function()
+    if SETTINGS.Spin and LocalPlayer.Character then
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local now = tick()
+            local delta = now - lastSpin
+            lastSpin = now
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(360 * delta), 0)  -- quay 360 độ/giây
+        end
+    else
+        lastSpin = tick()
+    end
+end)
+
+-- Auto Say Telegram
+task.spawn(function()
+    local lastSay = 0
+    while true do
+        if SETTINGS.AutoSay and tick() - lastSay > 30 then  -- 30 giây 1 lần
+            pcall(function()
+                local args = {[1] = "say", [2] = "@haidwng12 telegram script"}
+                local remote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents") or ReplicatedStorage:FindFirstChild("Chat")
+                if remote then
+                    -- Gửi chat (tùy game, Arsenal thường dùng SayMessageRequest)
+                    local sayRemote = ReplicatedStorage:FindFirstChild("SayMessageRequest") or ReplicatedStorage:FindFirstChild("Chatted")
+                    if sayRemote then
+                        sayRemote:FireServer("@haidwng12 telegram script", "All")
                     end
                 end
-            else
-                if espDrawings[p] then
-                    if espDrawings[p][1] then espDrawings[p][1].Visible = false end
-                    if espDrawings[p][2] then espDrawings[p][2].Visible = false end
+            end)
+            lastSay = tick()
+        end
+        task.wait(1)
+    end
+end)
+
+-- Infinite Ammo (mod số đạn trong tool)
+RunService.Stepped:Connect(function()
+    if SETTINGS.InfiniteAmmo then
+        local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
+        if tool then
+            for _, v in pairs(tool:GetDescendants()) do
+                if v:IsA("NumberValue") and (v.Name:lower():match("ammo") or v.Name:lower():match("bullet")) then
+                    v.Value = 999
                 end
             end
         end
     end
-end
+end)
 
+-- Hitbox Expander (chỉ địch)
+local expanded = {}
 RunService.RenderStepped:Connect(function()
-    if Settings.ESP then
-        refreshESP()
-    else
-        for _, d in pairs(espDrawings) do
-            if d[1] then d[1].Visible = false end
-            if d[2] then d[2].Visible = false end
+    if not SETTINGS.HitboxExpand then
+        for part, oldSize in pairs(expanded) do
+            pcall(function() part.Size = oldSize end)
+        end
+        expanded = {}
+        return
+    end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and isEnemy(p) then
+            for _, part in pairs(p.Character:GetChildren()) do
+                if part:IsA("BasePart") and not expanded[part] then
+                    expanded[part] = part.Size
+                    part.Size = part.Size + Vector3.new(hitboxExpandValue, hitboxExpandValue, hitboxExpandValue)
+                end
+            end
         end
     end
-    if Settings.ShowFOV and Camera then
+end)
+
+-- Noclip
+RunService.RenderStepped:Connect(function()
+    if SETTINGS.Noclip and LocalPlayer.Character then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    elseif LocalPlayer.Character then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then part.CanCollide = true end
+        end
+    end
+end)
+
+-- Weapon Mods
+local function applyMods()
+    if not (SETTINGS.NoRecoil or SETTINGS.NoSpread or SETTINGS.FastReload) then return end
+    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool")
+    if tool then
+        for _, v in pairs(tool:GetDescendants()) do
+            if v:IsA("NumberValue") then
+                local n = v.Name:lower()
+                if SETTINGS.NoRecoil and (n:match("recoil") or n:match("kick")) then v.Value = 0 end
+                if SETTINGS.NoSpread and (n:match("spread") or n:match("accuracy")) then v.Value = 0 end
+                if SETTINGS.FastReload and (n:match("reload") or n:match("cooldown")) then v.Value = 0 end
+            end
+        end
+        if SETTINGS.FastReload then
+            pcall(function() local ev = tool:FindFirstChild("ReloadEvent") or tool:FindFirstChild("Reload"); if ev and ev:IsA("RemoteEvent") then ev:FireServer() end end)
+        end
+    end
+end
+RunService.RenderStepped:Connect(applyMods)
+
+-- Speed & Fly
+local flying = false
+local bv, bg
+RunService.RenderStepped:Connect(function()
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if hum then
+        if SETTINGS.Speed then
+            hum.WalkSpeed = 50
+            hum.JumpPower = 80
+        else
+            if hum.WalkSpeed == 50 then hum.WalkSpeed = 16; hum.JumpPower = 50 end
+        end
+    end
+    if SETTINGS.Fly then
+        if not flying then
+            flying = true
+            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                bv = Instance.new("BodyVelocity"); bv.MaxForce = Vector3.new(1e6,1e6,1e6); bv.Parent = hrp
+                bg = Instance.new("BodyGyro"); bg.MaxTorque = Vector3.new(1e6,1e6,1e6); bg.Parent = hrp
+                if hum then hum.PlatformStand = true end
+            end
+        end
+        if flying and bv and bg and LocalPlayer.Character then
+            local move = Vector3.new()
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0,20,0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0,20,0) end
+            bv.Velocity = move * 50
+            bg.CFrame = Camera.CFrame
+        end
+    else
+        if flying then
+            if bv then bv:Destroy() end; if bg then bg:Destroy() end
+            local hum2 = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum2 then hum2.PlatformStand = false end
+            flying = false
+        end
+    end
+end)
+
+-- FOV Circle
+RunService.RenderStepped:Connect(function()
+    if SETTINGS.ShowFOV and Camera then
         local center = Camera.ViewportSize / 2
         FOVCircle.Position = Vector2.new(center.X, center.Y)
+        FOVCircle.Radius = SETTINGS.FOV
         FOVCircle.Visible = true
     else
         FOVCircle.Visible = false
     end
 end)
 
-print("✅ Auto Farm đã sẵn sàng. Bật AUTO FARM, Team Check (ON), vào game, để đấy nó tự tele + bắn liên tục.")
+-- ESP (chỉ enemy)
+local function safeRemove(d) if d and d.Remove then pcall(d.Remove, d) end end
+local espData = {}
+local function AddESP(plr)
+    if plr == LocalPlayer then return end
+    local box = Drawing.new("Square"); box.Thickness = 1; box.Filled = false; box.Color = THEME_COLOR
+    local line = Drawing.new("Line"); line.Thickness = 1; line.Color = ACCENT_COLOR
+    local name = Drawing.new("Text"); name.Size = 8; name.Center = true; name.Outline = true; name.Color = Color3.new(1,1,1)
+    local hbg = Drawing.new("Square"); hbg.Thickness = 1; hbg.Filled = true; hbg.Color = Color3.new(0,0,0); hbg.Transparency = 0.5
+    local hfill = Drawing.new("Square"); hfill.Thickness = 0; hfill.Filled = true
+    local conn = RunService.RenderStepped:Connect(function()
+        if not isEnemy(plr) or not SETTINGS.ESP then
+            box.Visible = false; line.Visible = false; name.Visible = false; hbg.Visible = false; hfill.Visible = false
+            return
+        end
+        if not plr.Parent then
+            if espData[plr] then for _, d in pairs(espData[plr]) do safeRemove(d) end espData[plr]=nil end
+            return
+        end
+        local char, hum, hrp = plr.Character, plr.Character and plr.Character:FindFirstChildOfClass("Humanoid"), plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+        if not char or not hum or hum.Health<=0 then
+            box.Visible=false; line.Visible=false; name.Visible=false; hbg.Visible=false; hfill.Visible=false
+            return
+        end
+        local pos, on = Camera:WorldToViewportPoint(hrp.Position)
+        local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
+        if on and dist <= MAX_DISTANCE then
+            local h = math.clamp(2800/dist, 20, 180)
+            local w = math.clamp(1800/dist, 20, 100)
+            local topY = pos.Y - h/2
+            local leftX = pos.X - w/2
+            if SETTINGS.ESP_Box then
+                box.Size = Vector2.new(w, h); box.Position = Vector2.new(leftX, topY); box.Visible = true
+            else box.Visible = false end
+            if SETTINGS.ESP_Line then
+                line.From = Vector2.new(pos.X, topY); line.To = Vector2.new(pos.X, topY+h); line.Visible = true
+            else line.Visible = false end
+            if SETTINGS.ESP_Name then
+                local txt = plr.Name .. (SETTINGS.ESP_Distance and (" ["..math.floor(dist).."m]" or ""))
+                name.Text = txt; name.Position = Vector2.new(pos.X, topY-8); name.Visible = true
+            else name.Visible = false end
+            if SETTINGS.ESP_Health then
+                local ratio = hum.Health/hum.MaxHealth
+                local bw = 2; local bh = h
+                local bx = leftX - bw - 2; local by = topY
+                hbg.Size = Vector2.new(bw, bh); hbg.Position = Vector2.new(bx, by); hbg.Visible = true
+                hfill.Size = Vector2.new(bw, bh*ratio); hfill.Position = Vector2.new(bx, by+bh-(bh*ratio)); hfill.Color = Color3.fromHSV(ratio*0.33,1,1); hfill.Visible = true
+            else hbg.Visible=false; hfill.Visible=false end
+        else
+            box.Visible=false; line.Visible=false; name.Visible=false; hbg.Visible=false; hfill.Visible=false
+        end
+    end)
+    espData[plr] = {box, line, name, hbg, hfill, conn}
+end
+for _, p in pairs(espData) do for _, d in pairs(p) do safeRemove(d) end end
+espData = {}
+for _, p in pairs(Players:GetPlayers()) do AddESP(p) end
+Players.PlayerAdded:Connect(AddESP)
+Players.PlayerRemoving:Connect(function(p) if espData[p] then for _, d in pairs(espData[p]) do safeRemove(d) end espData[p]=nil end end)
+
+print("✅ Đã thêm Spin 360°, Auto Say Telegram, Infinite Ammo. Giao diện đẹp. Bật Auto Farm + Team Check là treo máy auto kill. Chơi Arsenal đỉnh cao.")
